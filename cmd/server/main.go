@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var storage MemStorage = MemStorage {
+var storage MemStorage = MemStorage{
 	Storage: make(map[string]Metric),
 }
 
@@ -40,76 +40,47 @@ func update(w http.ResponseWriter, r *http.Request) {
 
 	path := strings.Split(strings.Trim(strings.ToLower(r.URL.Path), "/"), "/")
 
-	//checking metric type
-	if len(path) >= 2 {
-		switch path[1] {
-		case "gauge":
-			//checking metric name
-			if len(path) >= 3 {
-				if path[2] == "" {
-					w.WriteHeader(http.StatusNotFound)
-					return
-				}
-				//checking metric value
-				if len(path) >=4 {
-					if path[3] == "" {
-						w.WriteHeader(http.StatusNotFound)
-						return
-					}
-					gauge, err := strconv.ParseFloat(path[3], 64)
-					if err != nil {
-						w.WriteHeader(http.StatusBadRequest)
-						return
-					}
-					metric := Metric{
-						Gauge: gauge,
-						IsCounter: false,
-					}
-					storage.Storage[path[2]] = metric
-				} else {
-					w.WriteHeader(http.StatusNotFound)
-						return
-				}
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-		case "counter":
-			//checking metric name
-			if len(path) >= 3 {
-				if path[2] == "" {
-					w.WriteHeader(http.StatusNotFound)
-					return
-				}
-				//checking metric value
-				if len(path) >=4 {
-					if path[3] == "" {
-						w.WriteHeader(http.StatusNotFound)
-						return
-					}
-					counter, err := strconv.ParseInt(path[3], 0, 64)
-					if err != nil {
-						w.WriteHeader(http.StatusBadRequest)
-						return
-					}
-					metric := Metric{
-						Counter: counter,
-						IsCounter: true,
-					}
-					storage.Storage[path[2]] = metric
-				} else {
-					w.WriteHeader(http.StatusNotFound)
-						return
-				}
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-		default:
+	if len(path) < 4 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	switch path[1] {
+	case "gauge":
+		if path[2] == "" || path[3] == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		gauge, err := strconv.ParseFloat(path[3], 64)
+		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		metric := Metric{
+			Gauge:     gauge,
+			IsCounter: false,
+		}
+		storage.Storage[path[2]] = metric
+	case "counter":
+		if path[2] == "" || path[3] == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		counter, err := strconv.ParseInt(path[3], 0, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		metric := Metric{
+			Counter:   counter,
+			IsCounter: true,
+		}
+		storage.Storage[path[2]] = metric
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 
 	// w.Write()
