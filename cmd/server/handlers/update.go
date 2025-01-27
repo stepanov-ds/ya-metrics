@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/metric"
+	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
 )
 
 
-func Update(w http.ResponseWriter, r *http.Request, storage *metric.MemStorage) {
+func Update(w http.ResponseWriter, r *http.Request, repo storage.Repositories) {
 	if r.Method != http.MethodPost {
 	     w.WriteHeader(http.StatusMethodNotAllowed)
 	     return
@@ -32,11 +32,11 @@ func Update(w http.ResponseWriter, r *http.Request, storage *metric.MemStorage) 
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		metric := metric.Metric{
+		metric := storage.Metric{
 			Gauge:     gauge,
 			IsCounter: false,
 		}
-		storage.Storage[path[2]] = metric
+		repo.SetMetric(path[2], metric)
 	case "counter":
 		if path[2] == "" || path[3] == "" {
 			w.WriteHeader(http.StatusNotFound)
@@ -47,11 +47,11 @@ func Update(w http.ResponseWriter, r *http.Request, storage *metric.MemStorage) 
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		metric := metric.Metric{
+		metric := storage.Metric{
 			Counter:   counter,
 			IsCounter: true,
 		}
-		storage.Storage[path[2]] = metric
+		repo.SetMetric(path[2], metric)
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		return
