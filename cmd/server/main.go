@@ -2,23 +2,10 @@ package main
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
+	"github.com/stepanov-ds/ya-metrics/cmd/server/handlers"
+	"github.com/stepanov-ds/ya-metrics/cmd/server/metric"
 )
-
-var storage MemStorage = MemStorage{
-	Storage: make(map[string]Metric),
-}
-
-type Metric struct {
-	Counter   int64
-	Gauge     float64
-	IsCounter bool
-}
-
-type MemStorage struct {
-	Storage map[string]Metric
-}
+//metricstest -test.v -test.run=^TestIteration1$ -binary-path=cmd/server/server
 
 func main() {
 	if err := run(); err != nil {
@@ -27,62 +14,10 @@ func main() {
 }
 
 func run() error {
+	var storage metric.MemStorage = *metric.NewMemStorage()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/update/", update)
+	mux.HandleFunc("/update/", func(w http.ResponseWriter, r *http.Request) {
+        handlers.Update(w, r, &storage)
+    })
 	return http.ListenAndServe(`:8080`, mux)
-}
-
-func update(w http.ResponseWriter, r *http.Request) {
-	// if r.Method != http.MethodPost {
-	//     w.WriteHeader(http.StatusMethodNotAllowed)
-	//     return
-	// }
-
-	path := strings.Split(strings.Trim(strings.ToLower(r.URL.Path), "/"), "/")
-
-	if len(path) < 4 {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	switch path[1] {
-	case "gauge":
-		if path[2] == "" || path[3] == "" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		gauge, err := strconv.ParseFloat(path[3], 64)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		metric := Metric{
-			Gauge:     gauge,
-			IsCounter: false,
-		}
-		storage.Storage[path[2]] = metric
-	case "counter":
-		if path[2] == "" || path[3] == "" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		counter, err := strconv.ParseInt(path[3], 0, 64)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		metric := Metric{
-			Counter:   counter,
-			IsCounter: true,
-		}
-		storage.Storage[path[2]] = metric
-	default:
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-	// w.Write()
-
 }
