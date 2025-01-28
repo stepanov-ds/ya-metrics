@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
+	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 )
 
 
@@ -32,7 +33,7 @@ func Update(w http.ResponseWriter, r *http.Request, repo storage.Repositories) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		metric := storage.Metric{
+		metric := utils.Metric{
 			Gauge:     gauge,
 			IsCounter: false,
 		}
@@ -47,7 +48,7 @@ func Update(w http.ResponseWriter, r *http.Request, repo storage.Repositories) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		metric := storage.Metric{
+		metric := utils.Metric{
 			Counter:   counter,
 			IsCounter: true,
 		}

@@ -1,12 +1,8 @@
 package storage
 
-type Metric struct {
-	Counter   int64
-	Gauge     float64
-	IsCounter bool
-}
+import "github.com/stepanov-ds/ya-metrics/pkg/utils"
 
 type Repositories interface {
-	GetMetric(key string) (Metric)
-	SetMetric(key string, m Metric)
+	GetMetric(key string) utils.Metric
+	SetMetric(key string, m utils.Metric)
 }

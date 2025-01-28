@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
+	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +21,7 @@ func TestUpdate(t *testing.T) {
 		args args
 		metricName string
 		expectedStatus int
-		expectedMetric storage.Metric
+		expectedMetric utils.Metric
 	}{
 		// TODO: Add test cases.
 		{
@@ -113,7 +114,7 @@ func TestUpdate(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			metricName: "testCounter",
-			expectedMetric: storage.Metric{
+			expectedMetric: utils.Metric{
 				Counter: 123,
 				Gauge: 0,
 				IsCounter: true,
@@ -128,7 +129,7 @@ func TestUpdate(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			metricName: "testGauge",
-			expectedMetric: storage.Metric{
+			expectedMetric: utils.Metric{
 				Counter: 0,
 				Gauge: 123.1,
 				IsCounter: false,
