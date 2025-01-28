@@ -1,18 +1,17 @@
 package handlers
 
 import (
+	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
+	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 	"net/http"
 	"strconv"
 	"strings"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 )
-
 
 func Update(w http.ResponseWriter, r *http.Request, repo storage.Repositories) {
 	if r.Method != http.MethodPost {
-	     w.WriteHeader(http.StatusMethodNotAllowed)
-	     return
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
 
 	path := strings.Split(strings.Trim(r.URL.Path, "/"), "/")

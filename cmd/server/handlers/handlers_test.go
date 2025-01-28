@@ -17,9 +17,9 @@ func TestUpdate(t *testing.T) {
 		storage storage.Repositories
 	}
 	tests := []struct {
-		name string
-		args args
-		metricName string
+		name           string
+		args           args
+		metricName     string
 		expectedStatus int
 		expectedMetric utils.Metric
 	}{
@@ -27,8 +27,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #1 Method GET not alowed",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodGet, "/update/gauge/testGauge/23.1", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodGet, "/update/gauge/testGauge/23.1", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusMethodNotAllowed,
@@ -36,8 +36,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #2 no metric value for counter",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusNotFound,
@@ -45,8 +45,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #3 no metric value for gauge",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusNotFound,
@@ -54,8 +54,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #4 wrong value for counter (float)",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123.3", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123.3", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -63,8 +63,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #5 wrong value for counter (string)",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/asd", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/asd", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -72,8 +72,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #6 wrong value for gauge (string)",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/asd", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/asd", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -81,8 +81,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #7 no metric name for gauge",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/gauge//asd", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/gauge//asd", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusNotFound,
@@ -90,8 +90,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #8 no metric name for counter",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/counter//asd", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/counter//asd", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusNotFound,
@@ -99,8 +99,8 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #9 wrong metric type",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/asd/testAsd/123", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/asd/testAsd/123", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -108,30 +108,30 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Positive #1 counter",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusOK,
-			metricName: "testCounter",
+			metricName:     "testCounter",
 			expectedMetric: utils.Metric{
-				Counter: 123,
-				Gauge: 0,
+				Counter:   123,
+				Gauge:     0,
 				IsCounter: true,
 			},
 		},
 		{
 			name: "Positive #2 gauge",
 			args: args{
-				w: httptest.NewRecorder(),
-				r: httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/123.1", nil),
+				w:       httptest.NewRecorder(),
+				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/123.1", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusOK,
-			metricName: "testGauge",
+			metricName:     "testGauge",
 			expectedMetric: utils.Metric{
-				Counter: 0,
-				Gauge: 123.1,
+				Counter:   0,
+				Gauge:     123.1,
 				IsCounter: false,
 			},
 		},
@@ -143,7 +143,7 @@ func TestUpdate(t *testing.T) {
 			rr := tt.args.w.(*httptest.ResponseRecorder)
 
 			assert.Equal(t, tt.expectedStatus, rr.Code)
-			if (tt.expectedStatus == http.StatusOK) {
+			if tt.expectedStatus == http.StatusOK {
 				assert.Equal(t, tt.expectedMetric, tt.args.storage.GetMetric(tt.metricName))
 			}
 		})

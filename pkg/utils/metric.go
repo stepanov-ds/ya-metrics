@@ -8,13 +8,13 @@ type Metric struct {
 
 func NewMetricCounter(counter int64) Metric {
 	return Metric{
-		Counter: counter,
+		Counter:   counter,
 		IsCounter: true,
 	}
 }
 func NewMetricGauge(gauge float64) Metric {
 	return Metric{
-		Gauge: gauge,
+		Gauge:     gauge,
 		IsCounter: false,
 	}
 }

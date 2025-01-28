@@ -1,6 +1,6 @@
 package utils
 
-type Queue []interface{} 
+type Queue []interface{}
 
 func NewQueue() *Queue {
 	return new(Queue)
