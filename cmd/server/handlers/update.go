@@ -20,10 +20,10 @@ func Update(c *gin.Context, st storage.Storage) {
 		return
 	}
 
-	// if c.Request.Method != http.MethodPost {
-	// 	c.AbortWithStatus(http.StatusMethodNotAllowed)
-	// 	return
-	// }
+	if c.Request.Method != http.MethodPost {
+		c.AbortWithStatus(http.StatusMethodNotAllowed)
+		return
+	}
 
 	switch strings.ToLower(metricType) {
 	case "gauge":
