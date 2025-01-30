@@ -59,7 +59,10 @@ func Update(c *gin.Context, st storage.Storage) {
 				}
 			}
 		} else {
-			c.String(http.StatusNotFound, "")
+			metric = utils.Metric{
+				Counter:   counter,
+				IsCounter: true,
+			}
 		}
 		st.SetMetric(metricName, metric)
 	default:
