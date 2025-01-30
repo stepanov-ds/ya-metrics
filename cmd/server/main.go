@@ -1,24 +1,46 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/cmd/server/handlers"
 	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
-	"net/http"
 )
 
-//metricstest -test.v -test.run=^TestIteration1$ -binary-path=cmd/server/server
+//metricstest -test.v -test.run=^TestIteration3[AB]$ -binary-path=cmd/server/server
 
 func main() {
-	if err := run(); err != nil {
+	st := storage.NewMemStorage()
+	r := gin.Default()
+
+	r.Any("/update/:metric_type/:metric_name/:value", func(ctx *gin.Context) {
+		st.LockMutex()
+		defer st.UnlockMutex()
+		handlers.Update(ctx, st)
+	})
+	r.Any("/update/:metric_type/:metric_name/:value/", func(ctx *gin.Context) {
+		st.LockMutex()
+		defer st.UnlockMutex()
+		handlers.Update(ctx, st)
+	})
+	r.GET("/value/:metric_type/:metric_name", func(ctx *gin.Context) {
+		st.LockMutex()
+		defer st.UnlockMutex()
+		handlers.Value(ctx, st)
+	})
+	r.GET("/value/:metric_type/:metric_name/", func(ctx *gin.Context) {
+		st.LockMutex()
+		defer st.UnlockMutex()
+		handlers.Value(ctx, st)
+	})
+	r.GET("/", func(ctx *gin.Context) {
+		st.LockMutex()
+		defer st.UnlockMutex()
+		handlers.Root(ctx, st)
+	})
+	
+
+	if err := r.Run(":8080"); err != nil {
 		panic(err)
 	}
-}
 
-func run() error {
-	st := storage.NewMemStorage()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/update/", func(w http.ResponseWriter, r *http.Request) {
-		handlers.Update(w, r, st)
-	})
-	return http.ListenAndServe(`:8080`, mux)
 }

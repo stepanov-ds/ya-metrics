@@ -1,61 +1,58 @@
 package handlers
 
 import (
-	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
+	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 )
 
-func Update(w http.ResponseWriter, r *http.Request, repo storage.Repositories) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+func Update(c *gin.Context, st storage.Storage) {
+	metricType := c.Param("metric_type")
+	metricName := c.Param("metric_name")
+	metricValue := c.Param("value")
+
+	if metricType == "" || metricName == "" || metricValue == "" {
+		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
-	path := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-
-	if len(path) < 4 {
-		w.WriteHeader(http.StatusNotFound)
+	if c.Request.Method != http.MethodPost {
+		c.AbortWithStatus(http.StatusMethodNotAllowed)
 		return
 	}
 
-	switch strings.ToLower(path[1]) {
+	switch strings.ToLower(metricType) {
 	case "gauge":
-		if path[2] == "" || path[3] == "" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		gauge, err := strconv.ParseFloat(path[3], 64)
+
+		gauge, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 		metric := utils.Metric{
 			Gauge:     gauge,
 			IsCounter: false,
 		}
-		repo.SetMetric(path[2], metric)
+		st.SetMetric(metricName, metric)
 	case "counter":
-		if path[2] == "" || path[3] == "" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		counter, err := strconv.ParseInt(path[3], 0, 64)
+		counter, err := strconv.ParseInt(metricValue, 0, 64)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 		metric := utils.Metric{
 			Counter:   counter,
 			IsCounter: true,
 		}
-		repo.SetMetric(path[2], metric)
+		st.SetMetric(metricName, metric)
 	default:
-		w.WriteHeader(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	c.Data(http.StatusOK, "", nil)
 }

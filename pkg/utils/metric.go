@@ -1,9 +1,9 @@
 package utils
 
 type Metric struct {
-	Counter   int64
-	Gauge     float64
-	IsCounter bool
+	Counter   int64 `json:"Counter,omitempty"`
+	Gauge     float64 `json:"Gauge,omitempty"`
+	IsCounter bool `json:"-"`
 }
 
 func NewMetricCounter(counter int64) Metric {

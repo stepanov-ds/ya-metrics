@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
 	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ func TestUpdate(t *testing.T) {
 	type args struct {
 		w       http.ResponseWriter
 		r       *http.Request
-		storage storage.Repositories
+		storage storage.Storage
 	}
 	tests := []struct {
 		name           string
@@ -124,7 +125,7 @@ func TestUpdate(t *testing.T) {
 			name: "Positive #2 gauge",
 			args: args{
 				w:       httptest.NewRecorder(),
-				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/123.1", nil),
+				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/123.1/", nil),
 				storage: storage.NewMemStorage(),
 			},
 			expectedStatus: http.StatusOK,
@@ -138,13 +139,30 @@ func TestUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Update(tt.args.w, tt.args.r, tt.args.storage)
+			gin.SetMode(gin.TestMode)
+			ctx, _ := gin.CreateTestContext(tt.args.w)
+			ctx.Request = tt.args.r
+			r := gin.Default()
+
+			r.RedirectTrailingSlash = false
+			r.Any("/update/:metric_type/:metric_name/:value/", func(c *gin.Context) {
+				Update(c, tt.args.storage)
+			})
+			r.Any("/update/:metric_type/:metric_name/:value", func(c *gin.Context) {
+				Update(c, tt.args.storage)
+			})
+			r.HandleContext(ctx)
 
 			rr := tt.args.w.(*httptest.ResponseRecorder)
 
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 			if tt.expectedStatus == http.StatusOK {
-				assert.Equal(t, tt.expectedMetric, tt.args.storage.GetMetric(tt.metricName))
+				metric, found := tt.args.storage.GetMetric(tt.metricName)
+				if found {
+					assert.Equal(t, tt.expectedMetric, metric)
+				} else {
+					assert.Fail(t, "metric not found in storage")
+				}
 			}
 		})
 	}
