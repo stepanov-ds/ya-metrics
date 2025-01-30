@@ -20,10 +20,10 @@ func Update(c *gin.Context, st storage.Storage) {
 		return
 	}
 
-	if c.Request.Method != http.MethodPost {
-		c.AbortWithStatus(http.StatusMethodNotAllowed)
-		return
-	}
+	// if c.Request.Method != http.MethodPost {
+	// 	c.AbortWithStatus(http.StatusMethodNotAllowed)
+	// 	return
+	// }
 
 	switch strings.ToLower(metricType) {
 	case "gauge":
@@ -44,9 +44,22 @@ func Update(c *gin.Context, st storage.Storage) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		metric := utils.Metric{
-			Counter:   counter,
-			IsCounter: true,
+		oldMetricValue, found := st.GetMetric(metricName)
+		metric := utils.Metric{}
+		if found {
+			if oldMetricValue.IsCounter {
+				metric = utils.Metric{
+					Counter:   counter + oldMetricValue.Counter,
+					IsCounter: true,
+				}
+			} else {
+				metric = utils.Metric{
+					Counter:   counter,
+					IsCounter: true,
+				}
+			}
+		} else {
+			c.String(http.StatusNotFound, "")
 		}
 		st.SetMetric(metricName, metric)
 	default:

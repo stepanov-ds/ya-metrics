@@ -37,7 +37,6 @@ func main() {
 		defer st.UnlockMutex()
 		handlers.Root(ctx, st)
 	})
-	
 
 	if err := r.Run(":8080"); err != nil {
 		panic(err)
