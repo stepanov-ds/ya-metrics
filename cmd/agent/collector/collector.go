@@ -54,7 +54,11 @@ func (c *Collector) CollectMetrics() {
 		c.Metrics[k] = utils.NewMetricGauge(v)
 	}
 
-	c.Metrics["PollCount"] = utils.NewMetricCounter(1)
+	if value, exist := c.Metrics["PollCount"]; exist {
+		c.Metrics["PollCount"] = utils.NewMetricCounter(value.Counter + 1)
+	} else {
+		c.Metrics["PollCount"] = utils.NewMetricCounter(1)
+	}
 
 	c.Metrics["RandomValue"] = utils.NewMetricGauge(rand.Float64())
 

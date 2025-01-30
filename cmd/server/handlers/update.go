@@ -45,7 +45,7 @@ func Update(c *gin.Context, st storage.Storage) {
 			return
 		}
 		oldMetricValue, found := st.GetMetric(metricName)
-		metric := utils.Metric{}
+		var metric utils.Metric
 		if found {
 			if oldMetricValue.IsCounter {
 				metric = utils.Metric{
