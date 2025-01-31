@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
@@ -18,10 +19,12 @@ func Value(c *gin.Context, st storage.Storage) {
 	}
 	metricValue, found := st.GetMetric(metricName)
 	if found {
-		if metricValue.IsCounter {
+		if metricValue.IsCounter && strings.ToLower(metricType) == "counter" {
 			c.String(http.StatusOK, fmt.Sprintf("%d", metricValue.Counter))
-		} else {
+		} else if !metricValue.IsCounter&& strings.ToLower(metricType) == "gauge" {
 			c.String(http.StatusOK, fmt.Sprintf("%.3f", metricValue.Gauge))
+		} else {
+			c.String(http.StatusNotFound, "")
 		}
 	} else {
 		c.String(http.StatusNotFound, "")

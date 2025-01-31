@@ -27,7 +27,25 @@ func (s *MemStorage) GetMetric(key string) (utils.Metric, bool) {
 }
 
 func (s *MemStorage) SetMetric(key string, m utils.Metric) {
-	s.storage[key] = m
+	if m.IsCounter{
+		oldMetricValue, found := s.GetMetric(key)
+		if found {
+			if oldMetricValue.IsCounter {
+				s.storage[key] = utils.Metric{
+					Counter:   m.Counter + oldMetricValue.Counter,
+					IsCounter: true,
+				}
+			} else {
+				s.storage[key] = m
+			}
+		} else {
+			s.storage[key] = m
+		}
+	} else {
+		s.storage[key] = m
+	}
+	
+	
 }
 
 func (s *MemStorage) LockMutex() {

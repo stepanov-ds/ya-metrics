@@ -11,7 +11,7 @@ import (
 func Root(c *gin.Context, st storage.Storage) {
 	jsonData, err := json.Marshal(st.GetAllMetrics())
 	if err != nil {
-		c.String(http.StatusOK, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
 	}
 	c.JSON(http.StatusOK, string(jsonData))
 }

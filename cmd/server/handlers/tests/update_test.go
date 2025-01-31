@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stepanov-ds/ya-metrics/cmd/server/handlers"
 	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
 	"github.com/stepanov-ds/ya-metrics/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +14,7 @@ import (
 
 func TestUpdate(t *testing.T) {
 	type args struct {
-		w       http.ResponseWriter
+		//w       http.ResponseWriter
 		r       *http.Request
 		storage storage.Storage
 	}
@@ -28,7 +29,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #1 Method GET not alowed",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodGet, "/update/gauge/testGauge/23.1", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -37,7 +37,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #2 no metric value for counter",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -46,7 +45,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #3 no metric value for gauge",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -55,7 +53,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #4 wrong value for counter (float)",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123.3", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -64,7 +61,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #5 wrong value for counter (string)",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/asd", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -73,7 +69,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #6 wrong value for gauge (string)",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/asd", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -82,7 +77,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #7 no metric name for gauge",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge//asd", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -91,7 +85,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #8 no metric name for counter",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter//asd", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -100,7 +93,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Negative #9 wrong metric type",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/asd/testAsd/123", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -109,7 +101,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Positive #1 counter",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -124,7 +115,6 @@ func TestUpdate(t *testing.T) {
 		{
 			name: "Positive #2 gauge",
 			args: args{
-				w:       httptest.NewRecorder(),
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/123.1/", nil),
 				storage: storage.NewMemStorage(),
 			},
@@ -140,20 +130,19 @@ func TestUpdate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
-			ctx, _ := gin.CreateTestContext(tt.args.w)
+			rr := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(rr)
 			ctx.Request = tt.args.r
 			r := gin.Default()
 
 			r.RedirectTrailingSlash = false
 			r.Any("/update/:metric_type/:metric_name/:value/", func(c *gin.Context) {
-				Update(c, tt.args.storage)
+				handlers.Update(c, tt.args.storage)
 			})
 			r.Any("/update/:metric_type/:metric_name/:value", func(c *gin.Context) {
-				Update(c, tt.args.storage)
+				handlers.Update(c, tt.args.storage)
 			})
 			r.HandleContext(ctx)
-
-			rr := tt.args.w.(*httptest.ResponseRecorder)
 
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 			if tt.expectedStatus == http.StatusOK {
