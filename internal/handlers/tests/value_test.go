@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/handlers"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
+	"github.com/stepanov-ds/ya-metrics/internal/handlers"
+	"github.com/stepanov-ds/ya-metrics/internal/storage"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 

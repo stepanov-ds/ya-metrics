@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
+	"github.com/stepanov-ds/ya-metrics/internal/storage"
 )
 
 func Value(c *gin.Context, st storage.Storage) {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 type Sender interface {

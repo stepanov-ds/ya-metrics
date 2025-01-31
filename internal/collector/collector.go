@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"runtime"
 
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 type Collector struct {

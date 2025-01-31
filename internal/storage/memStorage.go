@@ -3,7 +3,7 @@ package storage
 import (
 	"sync"
 
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 type MemStorage struct {

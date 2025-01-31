@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 

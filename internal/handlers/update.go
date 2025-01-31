@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
-	"github.com/stepanov-ds/ya-metrics/pkg/utils"
+	"github.com/stepanov-ds/ya-metrics/internal/storage"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 func Update(c *gin.Context, st storage.Storage) {

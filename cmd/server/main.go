@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/handlers"
-	"github.com/stepanov-ds/ya-metrics/cmd/server/storage"
+	"github.com/stepanov-ds/ya-metrics/internal/handlers"
+	"github.com/stepanov-ds/ya-metrics/internal/storage"
 )
 
 //metricstest -test.v -test.run=^TestIteration3[AB]$ -binary-path=cmd/server/server

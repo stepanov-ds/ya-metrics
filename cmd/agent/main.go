@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stepanov-ds/ya-metrics/cmd/agent/collector"
-	"github.com/stepanov-ds/ya-metrics/cmd/agent/sender"
+	"github.com/stepanov-ds/ya-metrics/internal/collector"
+	"github.com/stepanov-ds/ya-metrics/internal/sender"
 )
 
 //metricstest --test.v --test.run=^TestIteration2[AB]*$ --source-path=. --agent-binary-path=cmd/agent/agent
