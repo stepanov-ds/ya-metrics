@@ -3,6 +3,7 @@ package collector
 import (
 	"testing"
 
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,11 @@ func TestCollector_CollectMetrics(t *testing.T) {
 			for i := 0; i < int(tt.pollCount); i++ {
 				tt.c.CollectMetrics()
 			}
-			assert.Equal(t, tt.pollCount, tt.c.Metrics["PollCount"].Counter)
+			if value, ok := tt.c.Metrics.Load("PollCount"); ok {
+				assert.Equal(t, tt.pollCount, value.(utils.Metric).Counter)
+			} else {
+				assert.Fail(t, "metric PollCount does not exist")
+			}
 		})
 	}
 }

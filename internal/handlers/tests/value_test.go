@@ -110,7 +110,6 @@ func TestValue(t *testing.T) {
 			expectedBody:   "7",
 			request:        httptest.NewRequest(http.MethodGet, "/value/counter/test4", nil),
 		},
-		
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

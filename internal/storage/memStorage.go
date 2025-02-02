@@ -1,14 +1,11 @@
 package storage
 
 import (
-	"sync"
-
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 type MemStorage struct {
 	storage map[string]utils.Metric
-	mu      sync.Mutex
 }
 
 func NewMemStorage() *MemStorage {
@@ -27,7 +24,7 @@ func (s *MemStorage) GetMetric(key string) (utils.Metric, bool) {
 }
 
 func (s *MemStorage) SetMetric(key string, m utils.Metric) {
-	if m.IsCounter{
+	if m.IsCounter {
 		oldMetricValue, found := s.GetMetric(key)
 		if found {
 			if oldMetricValue.IsCounter {
@@ -44,16 +41,8 @@ func (s *MemStorage) SetMetric(key string, m utils.Metric) {
 	} else {
 		s.storage[key] = m
 	}
-	
-	
 }
 
-func (s *MemStorage) LockMutex() {
-	s.mu.Lock()
-}
-func (s *MemStorage) UnlockMutex() {
-	s.mu.Unlock()
-}
 func (s *MemStorage) GetAllMetrics() map[string]utils.Metric {
 	return s.storage
 }

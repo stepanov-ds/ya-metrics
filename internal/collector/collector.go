@@ -3,17 +3,19 @@ package collector
 import (
 	"math/rand"
 	"runtime"
+	"sync"
 
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 type Collector struct {
-	Metrics map[string]utils.Metric
+	Metrics sync.Map
+	mu      sync.Mutex
 }
 
 func NewCollector() *Collector {
 	return &Collector{
-		Metrics: make(map[string]utils.Metric),
+		Metrics: sync.Map{},
 	}
 }
 
@@ -51,15 +53,31 @@ func (c *Collector) CollectMetrics() {
 	}
 
 	for k, v := range metrics {
-		c.Metrics[k] = utils.NewMetricGauge(v)
+		c.Metrics.Store(k, utils.NewMetricGauge(v))
 	}
 
-	if value, exist := c.Metrics["PollCount"]; exist {
-		c.Metrics["PollCount"] = utils.NewMetricCounter(value.Counter + 1)
+	if value, exist := c.Metrics.Load("PollCount"); exist {
+		oldCounter := value.(utils.Metric).Counter
+		c.Metrics.Store("PollCount", utils.NewMetricCounter(oldCounter+1))
 	} else {
-		c.Metrics["PollCount"] = utils.NewMetricCounter(1)
+		c.Metrics.Store("PollCount", utils.NewMetricCounter(1))
 	}
 
-	c.Metrics["RandomValue"] = utils.NewMetricGauge(rand.Float64())
+	c.Metrics.Store("RandomValue", utils.NewMetricGauge(rand.Float64()))
 
+}
+func (c *Collector) GetAllMetrics() map[string]utils.Metric {
+	result := make(map[string]utils.Metric)
+
+	c.Metrics.Range(func(key, value interface{}) bool {
+		k, ok1 := key.(string)
+		v, ok2 := value.(utils.Metric)
+
+		if ok1 && ok2 {
+			result[k] = v
+		}
+		return true
+	})
+
+	return result
 }

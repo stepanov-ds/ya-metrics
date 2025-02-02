@@ -21,7 +21,7 @@ func Value(c *gin.Context, st storage.Storage) {
 	if found {
 		if metricValue.IsCounter && strings.ToLower(metricType) == "counter" {
 			c.String(http.StatusOK, fmt.Sprintf("%d", metricValue.Counter))
-		} else if !metricValue.IsCounter&& strings.ToLower(metricType) == "gauge" {
+		} else if !metricValue.IsCounter && strings.ToLower(metricType) == "gauge" {
 			c.String(http.StatusOK, fmt.Sprintf("%.3f", metricValue.Gauge))
 		} else {
 			c.String(http.StatusNotFound, "")

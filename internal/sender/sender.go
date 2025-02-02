@@ -32,7 +32,7 @@ func NewHttpSender(timeout time.Duration, headers http.Header, baseUrl string) H
 	}
 }
 
-func (s *HttpSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
+func (s HttpSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
 	var path string
 	if metric.IsCounter {
 		path = fmt.Sprintf("/update/counter/%s/%d", name, metric.Counter)
