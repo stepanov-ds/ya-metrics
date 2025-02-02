@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	endpoint       = flag.String("a", "http://localhost:8080", "endpoint")
+	endpoint       = flag.String("a", "localhost:8080", "endpoint")
 	reportInterval = flag.Int("r", 10, "report interaval")
 	pollInterval   = flag.Int("p", 2, "poll interval")
 )
@@ -43,7 +43,7 @@ func main() {
 	var headers http.Header = make(map[string][]string)
 	collector := collector.NewCollector()
 	headers.Add("Content-Type", "text/plain")
-	sender := sender.NewHttpSender(time.Second*10, headers, *endpoint)
+	sender := sender.NewHttpSender(time.Second*10, headers, "http://" + *endpoint)
 
 	go Collect(time.Duration(*pollInterval)*time.Second, collector)
 	go Send(time.Duration(*reportInterval)*time.Second, collector, sender)
