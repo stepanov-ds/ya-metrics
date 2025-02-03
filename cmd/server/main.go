@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers"
@@ -16,6 +17,10 @@ var (
 
 func main() {
 	flag.Parse()
+	ADDRESS, found := os.LookupEnv("ADDRESS")
+	if found {
+		endpoint = &ADDRESS
+	}
 	st := storage.NewMemStorage()
 	r := gin.Default()
 
