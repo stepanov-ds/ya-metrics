@@ -91,7 +91,7 @@ func TestValue(t *testing.T) {
 			st:             storage.NewMemStorage(),
 			fillStorage:    true,
 			expectedStatus: http.StatusOK,
-			expectedBody:   "2.200",
+			expectedBody:   "2.2",
 			request:        httptest.NewRequest(http.MethodGet, "/value/gauge/test2", nil),
 		},
 		{
@@ -99,7 +99,7 @@ func TestValue(t *testing.T) {
 			st:             storage.NewMemStorage(),
 			fillStorage:    true,
 			expectedStatus: http.StatusOK,
-			expectedBody:   "6.600",
+			expectedBody:   "6.6",
 			request:        httptest.NewRequest(http.MethodGet, "/value/gauge/test3", nil),
 		},
 		{
