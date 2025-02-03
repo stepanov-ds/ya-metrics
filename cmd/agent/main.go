@@ -33,6 +33,7 @@ func Send(interval time.Duration, collector *collector.Collector, sender sender.
 			if err != nil {
 				if resp != nil {
 					print(resp.Body, err)
+					resp.Body.Close()
 				}
 			}
 		}
@@ -42,20 +43,20 @@ func Send(interval time.Duration, collector *collector.Collector, sender sender.
 
 func main() {
 	flag.Parse()
-	ADDRESS, found := os.LookupEnv("ADDRESS")
+	address, found := os.LookupEnv("ADDRESS")
 	if found {
-		endpoint = &ADDRESS
+		endpoint = &address
 	}
-	REPORT_INTERVAL, found := os.LookupEnv("REPORT_INTERVAL")
+	ri, found := os.LookupEnv("REPORT_INTERVAL")
 	if found {
-		i, err := strconv.Atoi(REPORT_INTERVAL)
+		i, err := strconv.Atoi(ri)
 		if err != nil {
 			reportInterval = &i
 		}
 	}
-	POLL_INTERVAL, found := os.LookupEnv("POLL_INTERVAL")
+	pi, found := os.LookupEnv("POLL_INTERVAL")
 	if found {
-		i, err := strconv.Atoi(POLL_INTERVAL)
+		i, err := strconv.Atoi(pi)
 		if err != nil {
 			pollInterval = &i
 		}
@@ -63,7 +64,7 @@ func main() {
 	var headers http.Header = make(map[string][]string)
 	collector := collector.NewCollector()
 	headers.Add("Content-Type", "text/plain")
-	sender := sender.NewHttpSender(time.Second*10, headers, "http://"+*endpoint)
+	sender := sender.NewHTTPSender(time.Second*10, headers, "http://"+*endpoint)
 
 	go Collect(time.Duration(*pollInterval)*time.Second, collector)
 	go Send(time.Duration(*reportInterval)*time.Second, collector, sender)

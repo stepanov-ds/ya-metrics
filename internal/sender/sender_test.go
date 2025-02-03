@@ -13,7 +13,7 @@ import (
 
 type MockClient struct {
 	http.Client
-	BaseUrl string
+	BaseURL string
 	Headers http.Header
 	DoFunc  func(*http.Request) (*http.Response, error)
 }
@@ -88,14 +88,15 @@ func TestHttpSender_SendMetric(t *testing.T) {
 						assert.Equal(t, tt.want.Method, req.Method)
 						assert.Equal(t, tt.want.Body, req.Body)
 						assert.Equal(t, tt.want.Header, req.Header)
-
+						tt.want.Body.Close()
+						req.Body.Close()
 						return &http.Response{
 							StatusCode: http.StatusOK,
 						}, nil
 					},
 				}
-				sender := &HttpSender{
-					BaseUrl: "http://localhost:8080",
+				sender := &HTTPSender{
+					BaseURL: "http://localhost:8080",
 					Headers: map[string][]string{
 						"Content-Type": {"text/plain"},
 					},
@@ -109,8 +110,8 @@ func TestHttpSender_SendMetric(t *testing.T) {
 						return nil, errors.New("mock error")
 					},
 				}
-				sender := &HttpSender{
-					BaseUrl: "http://localhost:8080",
+				sender := &HTTPSender{
+					BaseURL: "http://localhost:8080",
 					Headers: map[string][]string{
 						"Content-Type": {"text/plain"},
 					},
@@ -125,8 +126,8 @@ func TestHttpSender_SendMetric(t *testing.T) {
 						return nil, nil
 					},
 				}
-				sender := &HttpSender{
-					BaseUrl: "\t",
+				sender := &HTTPSender{
+					BaseURL: "\t",
 					Headers: map[string][]string{
 						"Content-Type": {"text/plain"},
 					},
@@ -143,12 +144,12 @@ func TestNewHttpSender(t *testing.T) {
 	type args struct {
 		timeout time.Duration
 		headers http.Header
-		baseUrl string
+		baseURL string
 	}
 	tests := []struct {
 		name string
 		args args
-		want HttpSender
+		want HTTPSender
 	}{
 		// TODO: Add test cases.
 		{
@@ -158,10 +159,10 @@ func TestNewHttpSender(t *testing.T) {
 				headers: map[string][]string{
 					"Content-Type": {"text/plain"},
 				},
-				baseUrl: "localhost:8080",
+				baseURL: "localhost:8080",
 			},
-			want: HttpSender{
-				BaseUrl: "localhost:8080",
+			want: HTTPSender{
+				BaseURL: "localhost:8080",
 				Headers: map[string][]string{
 					"Content-Type": {"text/plain"},
 				},
@@ -173,7 +174,7 @@ func TestNewHttpSender(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, NewHttpSender(tt.args.timeout, tt.args.headers, tt.args.baseUrl))
+			assert.Equal(t, tt.want, NewHTTPSender(tt.args.timeout, tt.args.headers, tt.args.baseURL))
 		})
 	}
 }

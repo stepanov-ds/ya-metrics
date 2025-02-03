@@ -12,19 +12,19 @@ type Sender interface {
 	SendMetric(name string, metric utils.Metric) (*http.Response, error)
 }
 
-type HttpClient interface {
+type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-type HttpSender struct {
-	BaseUrl string
+type HTTPSender struct {
+	BaseURL string
 	Headers http.Header
-	Client  HttpClient
+	Client  HTTPClient
 }
 
-func NewHttpSender(timeout time.Duration, headers http.Header, baseUrl string) HttpSender {
-	return HttpSender{
-		BaseUrl: baseUrl,
+func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) HTTPSender {
+	return HTTPSender{
+		BaseURL: baseURL,
 		Headers: headers,
 		Client: &http.Client{
 			Timeout: timeout,
@@ -32,14 +32,14 @@ func NewHttpSender(timeout time.Duration, headers http.Header, baseUrl string) H
 	}
 }
 
-func (s HttpSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
+func (s HTTPSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
 	var path string
 	if metric.IsCounter {
 		path = fmt.Sprintf("/update/counter/%s/%d", name, metric.Counter)
 	} else {
 		path = fmt.Sprintf("/update/gauge/%s/%f", name, metric.Gauge)
 	}
-	req, err := http.NewRequest(http.MethodPost, s.BaseUrl+path, nil)
+	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, nil)
 	if err != nil {
 		return nil, err
 	}
