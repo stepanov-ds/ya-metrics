@@ -90,6 +90,7 @@ func TestHttpSender_SendMetric(t *testing.T) {
 						assert.Equal(t, tt.want.Header, req.Header)
 						return &http.Response{
 							StatusCode: http.StatusOK,
+							Body: http.NoBody,
 						}, nil
 					},
 				}
@@ -100,7 +101,11 @@ func TestHttpSender_SendMetric(t *testing.T) {
 					},
 					Client: MockClient,
 				}
-				sender.SendMetric(tt.args.name, tt.args.metric)
+				resp, err := sender.SendMetric(tt.args.name, tt.args.metric)
+				if err != nil {
+					assert.Fail(t, err.Error())
+				}
+				defer resp.Body.Close()
 			}
 			if len(tt.name) >= 11 && tt.name[:11] == "Negative #1" {
 				MockClient := &MockClient{
@@ -115,7 +120,11 @@ func TestHttpSender_SendMetric(t *testing.T) {
 					},
 					Client: MockClient,
 				}
-				_, err := sender.SendMetric(tt.args.name, tt.args.metric)
+				resp, err := sender.SendMetric(tt.args.name, tt.args.metric)
+				if resp != nil {
+					defer resp.Body.Close()
+					assert.Fail(t, "response not nil")
+				}
 				assert.Error(t, err)
 			}
 			if len(tt.name) >= 11 && tt.name[:11] == "Negative #2" {
@@ -131,7 +140,11 @@ func TestHttpSender_SendMetric(t *testing.T) {
 					},
 					Client: MockClient,
 				}
-				_, err := sender.SendMetric(tt.args.name, tt.args.metric)
+				resp, err := sender.SendMetric(tt.args.name, tt.args.metric)
+				if resp != nil {
+					defer resp.Body.Close()
+					assert.Fail(t, "response not nil")
+				}
 				assert.Error(t, err)
 			}
 		})
