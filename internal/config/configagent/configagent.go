@@ -1,4 +1,4 @@
-package configAgent
+package configagent
 
 import (
 	"flag"

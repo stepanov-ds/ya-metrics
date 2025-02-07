@@ -1,4 +1,4 @@
-package configServer
+package configserver
 
 import (
 	"flag"
