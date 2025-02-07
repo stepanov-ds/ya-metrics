@@ -1,47 +1,22 @@
 package main
 
 import (
-	"flag"
-	"os"
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/internal/handlers"
+	"github.com/stepanov-ds/ya-metrics/internal/config"
+	"github.com/stepanov-ds/ya-metrics/internal/handlers/router"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 )
-
-var (
-	endpoint = flag.String("a", "localhost:8080", "endpoint")
-)
-
 //metricstest -test.v -test.run=^TestIteration3[AB]$ -binary-path=cmd/server/server
 
 func main() {
-	flag.Parse()
-	ADDRESS, found := os.LookupEnv("ADDRESS")
-	if found {
-		endpoint = &ADDRESS
-	}
+	config.ConfigServer()
 	st := storage.NewMemStorage(&sync.Map{})
 	r := gin.Default()
+	router.Route(r, st)
 
-	r.Any("/update/:metric_type/:metric_name/:value", func(ctx *gin.Context) {
-		handlers.Update(ctx, st)
-	})
-	r.Any("/update/:metric_type/:metric_name/:value/", func(ctx *gin.Context) {
-		handlers.Update(ctx, st)
-	})
-	r.GET("/value/:metric_type/:metric_name", func(ctx *gin.Context) {
-		handlers.Value(ctx, st)
-	})
-	r.GET("/value/:metric_type/:metric_name/", func(ctx *gin.Context) {
-		handlers.Value(ctx, st)
-	})
-	r.GET("/", func(ctx *gin.Context) {
-		handlers.Root(ctx, st)
-	})
-
-	if err := r.Run(*endpoint); err != nil {
+	if err := r.Run(*config.EndpointS); err != nil {
 		panic(err)
 	}
 

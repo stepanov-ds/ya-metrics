@@ -13,11 +13,11 @@ import (
 //metricstest --test.v --test.run=^TestIteration2[AB]*$ --source-path=. --agent-binary-path=cmd/agent/agent
 
 func main() {
-	config.ConifAgent()
+	config.ConfigAgent()
 	var headers http.Header = make(map[string][]string)
 	collector := collector.NewCollector(&sync.Map{})
 	headers.Add("Content-Type", "text/plain")
-	sender := sender.NewHTTPSender(time.Second*10, headers, "http://"+*config.Endpoint)
+	sender := sender.NewHTTPSender(time.Second*10, headers, "http://"+*config.EndpointA)
 
 	collector.Collect(time.Duration(*config.PollInterval) * time.Second)
 	sender.Send(time.Duration(*config.ReportInterval)*time.Second, collector)

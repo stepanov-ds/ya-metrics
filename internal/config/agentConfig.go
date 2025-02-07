@@ -7,16 +7,16 @@ import (
 )
 
 var (
-	Endpoint       = flag.String("a", "localhost:8080", "endpoint")
+	EndpointA      = flag.String("a", "localhost:8080", "endpoint")
 	ReportInterval = flag.Int("r", 10, "report interaval")
 	PollInterval   = flag.Int("p", 2, "poll interval")
 )
 
-func ConifAgent() {
+func ConfigAgent() {
 	flag.Parse()
 	address, found := os.LookupEnv("ADDRESS")
 	if found {
-		Endpoint = &address
+		EndpointA = &address
 	}
 	ri, found := os.LookupEnv("REPORT_INTERVAL")
 	if found {
