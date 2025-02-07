@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
-	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 func Update(c *gin.Context, st storage.Storage) {
@@ -33,16 +32,14 @@ func Update(c *gin.Context, st storage.Storage) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		metric := utils.NewMetricGauge(gauge)
-		st.SetMetric(metricName, metric)
+		st.SetMetricGauge(metricName, gauge)
 	case "counter":
 		counter, err := strconv.ParseInt(metricValue, 0, 64)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		metric := utils.NewMetricCounter(counter)
-		st.SetMetric(metricName, metric)
+		st.SetMetricCounter(metricName, counter)
 	default:
 		c.AbortWithStatus(http.StatusBadRequest)
 		return

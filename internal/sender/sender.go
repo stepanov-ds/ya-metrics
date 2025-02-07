@@ -1,10 +1,10 @@
 package sender
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/stepanov-ds/ya-metrics/internal/collector"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
@@ -32,13 +32,8 @@ func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) H
 	}
 }
 
-func (s HTTPSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
-	var path string
-	if metric.IsCounter {
-		path = fmt.Sprintf("/update/counter/%s/%d", name, metric.Counter)
-	} else {
-		path = fmt.Sprintf("/update/gauge/%s/%f", name, metric.Gauge)
-	}
+func (s *HTTPSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
+	path := metric.ConstructPath(name)
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, nil)
 	if err != nil {
 		return nil, err
@@ -49,4 +44,24 @@ func (s HTTPSender) SendMetric(name string, metric utils.Metric) (*http.Response
 		return nil, err
 	}
 	return resp, err
+}
+
+func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector) {
+	for {
+		for k, v := range collector.GetAllMetrics() {
+			resp, err := s.SendMetric(k, v)
+			if err != nil {
+				if resp != nil {
+					print(resp.Body, err)
+					resp.Body.Close()
+				}
+			}
+		}
+		println(interval)
+		time.Sleep(interval)
+	}
+}
+
+func (s *HTTPSender) Send(interval time.Duration, collector *collector.Collector) {
+	go s.send(interval, collector)
 }

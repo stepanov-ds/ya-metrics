@@ -3,12 +3,12 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
-	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,14 +24,14 @@ func TestRoot(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name:           "Positive #1 Get empty storage",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
 			expectedBody:   "\"{}\"",
 			fillStorage:    false,
 		},
 		{
 			name:           "Positive #2 Get storage with rewrited Counter and rewrited Gauge",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
 			expectedBody:   "\"{\\\"test1\\\":{\\\"Counter\\\":5},\\\"test2\\\":{\\\"Gauge\\\":2.2}}\"",
 			fillStorage:    true,
@@ -40,10 +40,10 @@ func TestRoot(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.fillStorage {
-				tt.st.SetMetric("test1", utils.NewMetricCounter(1))
-				tt.st.SetMetric("test1", utils.NewMetricCounter(4))
-				tt.st.SetMetric("test2", utils.NewMetricGauge(1.1))
-				tt.st.SetMetric("test2", utils.NewMetricGauge(2.2))
+				tt.st.SetMetricCounter("test1", 1)
+				tt.st.SetMetricCounter("test1", 4)
+				tt.st.SetMetricGauge("test2", 1.1)
+				tt.st.SetMetricGauge("test2", 2.2)
 			}
 
 			gin.SetMode(gin.TestMode)

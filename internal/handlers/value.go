@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 func Value(c *gin.Context, st storage.Storage) {
@@ -19,15 +20,22 @@ func Value(c *gin.Context, st storage.Storage) {
 	}
 	metricValue, found := st.GetMetric(metricName)
 	if found {
-		if metricValue.IsCounter && strings.ToLower(metricType) == "counter" {
-			c.String(http.StatusOK, fmt.Sprintf("%d", metricValue.Counter))
-		} else if !metricValue.IsCounter && strings.ToLower(metricType) == "gauge" {
-			result := fmt.Sprintf("%.3f", metricValue.Gauge)
-			result = strings.TrimRight(result, "0")
-			result = strings.TrimRight(result, ".")
-			c.String(http.StatusOK, result)
-		} else {
-			c.String(http.StatusNotFound, "")
+		switch v := metricValue.(type) {
+		case *utils.MetricCounter:
+			if strings.ToLower(metricType) == "counter" {
+				c.String(http.StatusOK, fmt.Sprintf("%v", v.Get()))
+			} else {
+				c.String(http.StatusNotFound, "")
+			}
+		case *utils.MetricGauge:
+			if strings.ToLower(metricType) == "gauge" {
+				result := fmt.Sprintf("%.3f", v.Get())
+				result = strings.TrimRight(result, "0")
+				result = strings.TrimRight(result, ".")
+				c.String(http.StatusOK, result)
+			} else {
+				c.String(http.StatusNotFound, "")
+			}
 		}
 	} else {
 		c.String(http.StatusNotFound, "")

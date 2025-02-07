@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers"
@@ -21,7 +22,7 @@ func main() {
 	if found {
 		endpoint = &ADDRESS
 	}
-	st := storage.NewMemStorage()
+	st := storage.NewMemStorage(&sync.Map{})
 	r := gin.Default()
 
 	r.Any("/update/:metric_type/:metric_name/:value", func(ctx *gin.Context) {

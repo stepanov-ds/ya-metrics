@@ -3,12 +3,12 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
-	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func TestValue(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name:           "Negative #1 metric not exist",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "",
@@ -32,7 +32,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Negative #2 no metric name",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "",
@@ -40,7 +40,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Negative #3 no metric name 2",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "",
@@ -48,7 +48,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Negative #4 no metric name 3",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "",
@@ -56,7 +56,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Negative #5 wrong type",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "",
@@ -64,7 +64,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Negative #6 try to get Counter rewrited by Gauge",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "",
@@ -72,7 +72,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Negative #7 try to get Gauge rewrited by Counter",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "",
@@ -80,7 +80,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Positive #1 get rewrited Counter by another Counter",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusOK,
 			expectedBody:   "5",
@@ -88,7 +88,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Positive #2 get rewrited Gauge by another Gauge",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusOK,
 			expectedBody:   "2.2",
@@ -96,7 +96,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Positive #3 get rewrited Counter by Gauge",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusOK,
 			expectedBody:   "6.6",
@@ -104,7 +104,7 @@ func TestValue(t *testing.T) {
 		},
 		{
 			name:           "Positive #4 get rewrited Gauge by Counter",
-			st:             storage.NewMemStorage(),
+			st:             storage.NewMemStorage(&sync.Map{}),
 			fillStorage:    true,
 			expectedStatus: http.StatusOK,
 			expectedBody:   "7",
@@ -114,14 +114,14 @@ func TestValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.fillStorage {
-				tt.st.SetMetric("test1", utils.NewMetricCounter(1))
-				tt.st.SetMetric("test1", utils.NewMetricCounter(4))
-				tt.st.SetMetric("test2", utils.NewMetricGauge(1.1))
-				tt.st.SetMetric("test2", utils.NewMetricGauge(2.2))
-				tt.st.SetMetric("test3", utils.NewMetricCounter(6))
-				tt.st.SetMetric("test3", utils.NewMetricGauge(6.6))
-				tt.st.SetMetric("test4", utils.NewMetricGauge(7.7))
-				tt.st.SetMetric("test4", utils.NewMetricCounter(7))
+				tt.st.SetMetricCounter("test1", 1)
+				tt.st.SetMetricCounter("test1", 4)
+				tt.st.SetMetricGauge("test2", 1.1)
+				tt.st.SetMetricGauge("test2", 2.2)
+				tt.st.SetMetricCounter("test3", 6)
+				tt.st.SetMetricGauge("test3", 6.6)
+				tt.st.SetMetricGauge("test4", 7.7)
+				tt.st.SetMetricCounter("test4", 7)
 			}
 			gin.SetMode(gin.TestMode)
 			rr := httptest.NewRecorder()

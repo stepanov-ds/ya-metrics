@@ -4,18 +4,18 @@ import (
 	"math/rand"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
 type Collector struct {
-	Metrics sync.Map
-	mu      sync.Mutex
+	Metrics *sync.Map
 }
 
-func NewCollector() *Collector {
+func NewCollector(m *sync.Map) *Collector {
 	return &Collector{
-		Metrics: sync.Map{},
+		Metrics: m,
 	}
 }
 
@@ -57,8 +57,11 @@ func (c *Collector) CollectMetrics() {
 	}
 
 	if value, exist := c.Metrics.Load("PollCount"); exist {
-		oldCounter := value.(utils.Metric).Counter
-		c.Metrics.Store("PollCount", utils.NewMetricCounter(oldCounter+1))
+		if v, ok := value.(*utils.MetricCounter); ok {
+			v.Set(1)
+		} else {
+			c.Metrics.Store("PollCount", utils.NewMetricCounter(1))
+		}
 	} else {
 		c.Metrics.Store("PollCount", utils.NewMetricCounter(1))
 	}
@@ -80,4 +83,16 @@ func (c *Collector) GetAllMetrics() map[string]utils.Metric {
 	})
 
 	return result
+}
+
+func (c *Collector) collect(interval time.Duration) {
+	for {
+		c.CollectMetrics()
+		time.Sleep(interval)
+		println(interval)
+	}
+}
+
+func (c *Collector) Collect(interval time.Duration) {
+	go c.collect(interval)
 }

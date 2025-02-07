@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +31,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #1 Method GET not alowed",
 			args: args{
 				r:       httptest.NewRequest(http.MethodGet, "/update/gauge/testGauge/23.1", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
@@ -38,7 +39,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #2 no metric value for counter",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusNotFound,
 		},
@@ -46,7 +47,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #3 no metric value for gauge",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusNotFound,
 		},
@@ -54,7 +55,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #4 wrong value for counter (float)",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123.3", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -62,7 +63,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #5 wrong value for counter (string)",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/asd", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -70,7 +71,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #6 wrong value for gauge (string)",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/asd", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -78,7 +79,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #7 no metric name for gauge",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge//asd", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusNotFound,
 		},
@@ -86,7 +87,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #8 no metric name for counter",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter//asd", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusNotFound,
 		},
@@ -94,7 +95,7 @@ func TestUpdate(t *testing.T) {
 			name: "Negative #9 wrong metric type",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/asd/testAsd/123", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -102,29 +103,21 @@ func TestUpdate(t *testing.T) {
 			name: "Positive #1 counter",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/counter/testCounter/123", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusOK,
 			metricName:     "testCounter",
-			expectedMetric: utils.Metric{
-				Counter:   123,
-				Gauge:     0,
-				IsCounter: true,
-			},
+			expectedMetric: utils.NewMetricCounter(123),
 		},
 		{
 			name: "Positive #2 gauge",
 			args: args{
 				r:       httptest.NewRequest(http.MethodPost, "/update/gauge/testGauge/123.1/", nil),
-				storage: storage.NewMemStorage(),
+				storage: storage.NewMemStorage(&sync.Map{}),
 			},
 			expectedStatus: http.StatusOK,
 			metricName:     "testGauge",
-			expectedMetric: utils.Metric{
-				Counter:   0,
-				Gauge:     123.1,
-				IsCounter: false,
-			},
+			expectedMetric: utils.NewMetricGauge(123.1),
 		},
 	}
 	for _, tt := range tests {

@@ -90,7 +90,7 @@ func TestHttpSender_SendMetric(t *testing.T) {
 						assert.Equal(t, tt.want.Header, req.Header)
 						return &http.Response{
 							StatusCode: http.StatusOK,
-							Body: http.NoBody,
+							Body:       http.NoBody,
 						}, nil
 					},
 				}
