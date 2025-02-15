@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"strconv"
@@ -19,6 +20,7 @@ func Update(c *gin.Context, st storage.Storage) {
 	if metricType == "" || metricName == "" || metricValue == "" {
 		if c.Request.Body != nil {
 			body, err := io.ReadAll(c.Request.Body)
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 			if err != nil {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
