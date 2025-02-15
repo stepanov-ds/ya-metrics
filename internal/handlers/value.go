@@ -11,12 +11,12 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
-func ValueWithPath(c *gin.Context, st storage.Storage) {
+func Value(c *gin.Context, st storage.Storage) {
 	metricType := c.Param("metric_type")
 	metricName := c.Param("metric_name")
 
 	if metricType == "" || metricName == "" {
-		c.AbortWithStatus(http.StatusNotFound)
+		ValueWithJson(c, st)
 		return
 	}
 	metricValue, found := st.GetMetric(metricName)
@@ -43,7 +43,7 @@ func ValueWithPath(c *gin.Context, st storage.Storage) {
 	}
 }
 
-func Value(c *gin.Context, st storage.Storage) {
+func ValueWithJson(c *gin.Context, st storage.Storage) {
 	var m utils.Metrics
 	
 	defer c.Request.Body.Close()

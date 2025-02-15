@@ -23,10 +23,10 @@ func Route(r *gin.Engine, st *storage.MemStorage) {
 		handlers.Update(ctx, st)
 	})
 	r.GET("/value/:metric_type/:metric_name", func(ctx *gin.Context) {
-		handlers.ValueWithPath(ctx, st)
+		handlers.Value(ctx, st)
 	})
 	r.GET("/value/:metric_type/:metric_name/", func(ctx *gin.Context) {
-		handlers.ValueWithPath(ctx, st)
+		handlers.Value(ctx, st)
 	})
 	r.POST("/value", func(ctx *gin.Context) {
 		handlers.Value(ctx, st)
