@@ -64,31 +64,40 @@ func ValueWithJson(c *gin.Context, st storage.Storage) {
 		metric, found := st.GetMetric(m.ID)
 		if !found {
 			c.JSON(http.StatusNotFound, nil)
+			return
 		} 
 		if reflect.TypeOf(metric) != reflect.TypeOf(&utils.MetricGauge{}) {
 			c.JSON(http.StatusNotFound, nil)
+			return
 		}
 		floatValue, ok := metric.Get().(float64) 
 		if !ok {
 			c.JSON(http.StatusNotFound, nil)
+			return
 		}
 		m.Value = &floatValue
 		c.JSON(http.StatusOK, m)
+		return
 	case "counter":
 		metric, found := st.GetMetric(m.ID)
 		if !found {
 			c.JSON(http.StatusNotFound, nil)
+			return
 		} 
 		if reflect.TypeOf(metric) != reflect.TypeOf(&utils.MetricCounter{}) {
 			c.JSON(http.StatusNotFound, nil)
+			return
 		}
 		floatValue, ok := metric.Get().(int64) 
 		if !ok {
 			c.JSON(http.StatusNotFound, nil)
+			return
 		}
 		m.Delta = &floatValue
 		c.JSON(http.StatusOK, m)
+		return
 	default:
 		c.JSON(http.StatusBadRequest, nil)
+		return
 	}
 }
