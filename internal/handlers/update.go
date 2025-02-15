@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,8 +17,20 @@ func Update(c *gin.Context, st storage.Storage) {
 	metricValue := c.Param("value")
 
 	if metricType == "" || metricName == "" || metricValue == "" {
-		UpdateWithJson(c, st)
-		//c.AbortWithStatus(http.StatusNotFound)
+		if c.Request.Body != nil {
+			body, err := io.ReadAll(c.Request.Body)
+			if err != nil {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+			if len(body) == 0 {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+			UpdateWithJson(c, st)
+			return
+		}
+		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 

@@ -16,7 +16,11 @@ func Value(c *gin.Context, st storage.Storage) {
 	metricName := c.Param("metric_name")
 
 	if metricType == "" || metricName == "" {
-		ValueWithJson(c, st)
+		if (c.Request.Method == http.MethodPost) {
+			ValueWithJson(c, st)
+			return
+		}
+		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 	metricValue, found := st.GetMetric(metricName)
