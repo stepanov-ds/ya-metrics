@@ -89,7 +89,6 @@ func (c *Collector) collect(interval time.Duration) {
 	for {
 		c.CollectMetrics()
 		time.Sleep(interval)
-		println(interval)
 	}
 }
 

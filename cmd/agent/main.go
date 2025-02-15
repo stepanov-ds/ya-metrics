@@ -16,7 +16,7 @@ func main() {
 	configagent.ConfigAgent()
 	var headers http.Header = make(map[string][]string)
 	collector := collector.NewCollector(&sync.Map{})
-	headers.Add("Content-Type", "text/plain")
+	headers.Add("Content-Type", "application/json")
 	sender := sender.NewHTTPSender(time.Second*10, headers, "http://"+*configagent.Endpoint)
 
 	collector.Collect(time.Duration(*configagent.PollInterval) * time.Second)

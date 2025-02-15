@@ -9,6 +9,7 @@ type Metric interface {
 	Get() interface{}
 	Set(interface{})
 	ConstructPath(string) string
+	ConstructJsonObj(string) Metrics
 }
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
@@ -83,7 +84,7 @@ func (m *MetricGauge) ConstructJsonObj(name string) Metrics {
 func (m *MetricCounter) ConstructJsonObj(name string) Metrics {
 	return Metrics{
 		ID: name,
-		MType: "gauge",
+		MType: "counter",
 		Delta: &m.Counter,
 	}
 }

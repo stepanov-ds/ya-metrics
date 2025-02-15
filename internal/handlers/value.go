@@ -45,6 +45,8 @@ func ValueWithPath(c *gin.Context, st storage.Storage) {
 
 func Value(c *gin.Context, st storage.Storage) {
 	var m utils.Metrics
+	
+	defer c.Request.Body.Close()
 	if err := c.ShouldBindJSON(&m); err != nil {
 		c.JSON(http.StatusBadRequest, nil)
 		return

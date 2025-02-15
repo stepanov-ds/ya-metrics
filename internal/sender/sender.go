@@ -49,12 +49,12 @@ func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) H
 // }
 
 func (s *HTTPSender) SendMetric(name string, m utils.Metric) (*http.Response, error) {
-	metric := m.ConstructPath(name)
+	metric := m.ConstructJsonObj(name)
 	jsonBytes, err := json.Marshal(metric)
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(http.MethodPost, s.BaseURL + "/value", bytes.NewBuffer(jsonBytes))
+	req, err := http.NewRequest(http.MethodPost, s.BaseURL + "/update", bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +63,7 @@ func (s *HTTPSender) SendMetric(name string, m utils.Metric) (*http.Response, er
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	return resp, err
 }
 
@@ -72,12 +73,10 @@ func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector
 			resp, err := s.SendMetric(k, v)
 			if err != nil {
 				if resp != nil {
-					print(resp.Body, err)
 					resp.Body.Close()
 				}
 			}
 		}
-		println(interval)
 		time.Sleep(interval)
 	}
 }
