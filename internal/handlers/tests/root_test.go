@@ -33,7 +33,7 @@ func TestRoot(t *testing.T) {
 			name:           "Positive #2 Get storage with rewrited Counter and rewrited Gauge",
 			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
-			expectedBody:   "\"{\\\"test1\\\":{\\\"Counter\\\":5},\\\"test2\\\":{\\\"Gauge\\\":2.2}}\"",
+			expectedBody:   "\"{\\\"test1\\\":{\\\"delta\\\":5},\\\"test2\\\":{\\\"value\\\":2.2}}\"",
 			fillStorage:    true,
 		},
 	}
