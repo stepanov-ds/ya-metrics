@@ -130,10 +130,10 @@ func TestUpdate(t *testing.T) {
 
 			r.RedirectTrailingSlash = false
 			r.Any("/update/:metric_type/:metric_name/:value/", func(c *gin.Context) {
-				handlers.Update(c, tt.args.storage)
+				handlers.UpdateWithPath(c, tt.args.storage)
 			})
 			r.Any("/update/:metric_type/:metric_name/:value", func(c *gin.Context) {
-				handlers.Update(c, tt.args.storage)
+				handlers.UpdateWithPath(c, tt.args.storage)
 			})
 			r.HandleContext(ctx)
 

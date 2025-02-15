@@ -131,10 +131,10 @@ func TestValue(t *testing.T) {
 
 			r.RedirectTrailingSlash = false
 			r.GET("/value/:metric_type/:metric_name", func(ctx *gin.Context) {
-				handlers.Value(ctx, tt.st)
+				handlers.ValueWithPath(ctx, tt.st)
 			})
 			r.GET("/value/:metric_type/:metric_name/", func(ctx *gin.Context) {
-				handlers.Value(ctx, tt.st)
+				handlers.ValueWithPath(ctx, tt.st)
 			})
 			r.HandleContext(ctx)
 			// print("_______________________________________BODY___________________")

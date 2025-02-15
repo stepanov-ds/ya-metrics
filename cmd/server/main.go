@@ -22,5 +22,4 @@ func main() {
 	if err := r.Run(*configserver.Endpoint); err != nil {
 		panic(err)
 	}
-
 }

@@ -7,9 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
+	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
-func Update(c *gin.Context, st storage.Storage) {
+func UpdateWithPath(c *gin.Context, st storage.Storage) {
 	metricType := c.Param("metric_type")
 	metricName := c.Param("metric_name")
 	metricValue := c.Param("value")
@@ -46,4 +47,30 @@ func Update(c *gin.Context, st storage.Storage) {
 	}
 
 	c.Data(http.StatusOK, "", nil)
+}
+
+func Update(c *gin.Context, st storage.Storage) {
+	var m utils.Metrics
+	if err := c.ShouldBindJSON(&m); err != nil {
+		c.JSON(http.StatusBadRequest, nil)
+		return
+	}
+	switch strings.ToLower(m.MType) {
+	case "gauge":
+		if m.Value == nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		st.SetMetricGauge(m.ID, *m.Value)
+	case "counter":
+		if m.Delta == nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		st.SetMetricCounter(m.ID,*m.Delta)
+	default:
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	c.JSON(http.StatusOK, nil)
 }

@@ -10,12 +10,19 @@ type Metric interface {
 	Set(interface{})
 	ConstructPath(string) string
 }
+type Metrics struct {
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+ } 
+ 
 type MetricCounter struct {
-	Counter int64 `json:"Counter,omitempty"`
+	Counter int64 `json:"delta,omitempty"`
 }
 
 type MetricGauge struct {
-	Gauge float64 `json:"Gauge,omitempty"`
+	Gauge float64 `json:"value,omitempty"`
 }
 
 func NewMetricCounter(counter int64) *MetricCounter {
@@ -63,4 +70,20 @@ func (m *MetricGauge) Set(value interface{}) {
 }
 func (m *MetricGauge) ConstructPath(name string) string {
 	return fmt.Sprintf("/update/gauge/%s/%f", name, m.Gauge)
+}
+
+func (m *MetricGauge) ConstructJsonObj(name string) Metrics {
+	return Metrics{
+		ID: name,
+		MType: "gauge",
+		Value: &m.Gauge,
+	}
+}
+
+func (m *MetricCounter) ConstructJsonObj(name string) Metrics {
+	return Metrics{
+		ID: name,
+		MType: "gauge",
+		Delta: &m.Counter,
+	}
 }

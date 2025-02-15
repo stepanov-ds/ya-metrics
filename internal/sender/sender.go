@@ -1,6 +1,8 @@
 package sender
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -32,9 +34,27 @@ func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) H
 	}
 }
 
-func (s *HTTPSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
-	path := metric.ConstructPath(name)
-	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, nil)
+// func (s *HTTPSender) SendMetric(name string, metric utils.Metric) (*http.Response, error) {
+// 	path := metric.ConstructPath(name)
+// 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	req.Header = s.Headers
+// 	resp, err := s.Client.Do(req)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return resp, err
+// }
+
+func (s *HTTPSender) SendMetric(name string, m utils.Metric) (*http.Response, error) {
+	metric := m.ConstructPath(name)
+	jsonBytes, err := json.Marshal(metric)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodPost, s.BaseURL + "/value", bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return nil, err
 	}
