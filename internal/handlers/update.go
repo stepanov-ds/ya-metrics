@@ -10,13 +10,14 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
-func UpdateWithPath(c *gin.Context, st storage.Storage) {
+func Update(c *gin.Context, st storage.Storage) {
 	metricType := c.Param("metric_type")
 	metricName := c.Param("metric_name")
 	metricValue := c.Param("value")
 
 	if metricType == "" || metricName == "" || metricValue == "" {
-		c.AbortWithStatus(http.StatusNotFound)
+		UpdateWithJson(c, st)
+		//c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
@@ -49,7 +50,7 @@ func UpdateWithPath(c *gin.Context, st storage.Storage) {
 	c.Data(http.StatusOK, "", nil)
 }
 
-func Update(c *gin.Context, st storage.Storage) {
+func UpdateWithJson(c *gin.Context, st storage.Storage) {
 	var m utils.Metrics
 	if err := c.ShouldBindJSON(&m); err != nil {
 		c.JSON(http.StatusBadRequest, nil)
