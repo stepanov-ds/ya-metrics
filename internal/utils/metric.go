@@ -16,8 +16,8 @@ type Metrics struct {
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
- } 
- 
+}
+
 type MetricCounter struct {
 	Counter int64 `json:"delta,omitempty"`
 }
@@ -75,7 +75,7 @@ func (m *MetricGauge) ConstructPath(name string) string {
 
 func (m *MetricGauge) ConstructJsonObj(name string) Metrics {
 	return Metrics{
-		ID: name,
+		ID:    name,
 		MType: "gauge",
 		Value: &m.Gauge,
 	}
@@ -83,7 +83,7 @@ func (m *MetricGauge) ConstructJsonObj(name string) Metrics {
 
 func (m *MetricCounter) ConstructJsonObj(name string) Metrics {
 	return Metrics{
-		ID: name,
+		ID:    name,
 		MType: "counter",
 		Delta: &m.Counter,
 	}

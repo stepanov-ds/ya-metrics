@@ -20,7 +20,7 @@ func main() {
 	sender := sender.NewHTTPSender(time.Second*10, headers, "http://"+*configagent.Endpoint)
 
 	collector.Collect(time.Duration(*configagent.PollInterval) * time.Second)
-	sender.Send(time.Duration(*configagent.ReportInterval)*time.Second, collector)
+	sender.Send(time.Duration(*configagent.ReportInterval)*time.Second, collector, true)
 
 	select {}
 

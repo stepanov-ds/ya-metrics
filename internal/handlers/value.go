@@ -16,7 +16,7 @@ func Value(c *gin.Context, st storage.Storage) {
 	metricName := c.Param("metric_name")
 
 	if metricType == "" || metricName == "" {
-		if (c.Request.Method == http.MethodPost) {
+		if c.Request.Method == http.MethodPost {
 			ValueWithJson(c, st)
 			return
 		}
@@ -49,7 +49,7 @@ func Value(c *gin.Context, st storage.Storage) {
 
 func ValueWithJson(c *gin.Context, st storage.Storage) {
 	var m utils.Metrics
-	
+
 	defer c.Request.Body.Close()
 	if err := c.ShouldBindJSON(&m); err != nil {
 		c.JSON(http.StatusBadRequest, nil)
@@ -65,12 +65,12 @@ func ValueWithJson(c *gin.Context, st storage.Storage) {
 		if !found {
 			c.JSON(http.StatusNotFound, nil)
 			return
-		} 
+		}
 		if reflect.TypeOf(metric) != reflect.TypeOf(&utils.MetricGauge{}) {
 			c.JSON(http.StatusNotFound, nil)
 			return
 		}
-		floatValue, ok := metric.Get().(float64) 
+		floatValue, ok := metric.Get().(float64)
 		if !ok {
 			c.JSON(http.StatusNotFound, nil)
 			return
@@ -83,12 +83,12 @@ func ValueWithJson(c *gin.Context, st storage.Storage) {
 		if !found {
 			c.JSON(http.StatusNotFound, nil)
 			return
-		} 
+		}
 		if reflect.TypeOf(metric) != reflect.TypeOf(&utils.MetricCounter{}) {
 			c.JSON(http.StatusNotFound, nil)
 			return
 		}
-		floatValue, ok := metric.Get().(int64) 
+		floatValue, ok := metric.Get().(int64)
 		if !ok {
 			c.JSON(http.StatusNotFound, nil)
 			return

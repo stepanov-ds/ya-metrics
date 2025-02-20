@@ -8,6 +8,7 @@ import (
 )
 
 func Route(r *gin.Engine, st *storage.MemStorage) {
+	r.Use(middlewares.Gzip())
 	r.Use(middlewares.WithLogging())
 
 	r.Any("/update/:metric_type/:metric_name/:value", func(ctx *gin.Context) {

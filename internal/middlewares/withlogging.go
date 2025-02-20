@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-
 func WithLogging() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -23,8 +22,6 @@ func WithLogging() gin.HandlerFunc {
 		c.Next()
 
 		duration := time.Since(start)
-
-		
 
 		logger.Log.Info("Request received",
 			zap.String("URI", c.Request.URL.Path),

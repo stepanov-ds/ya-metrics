@@ -83,7 +83,7 @@ func UpdateWithJson(c *gin.Context, st storage.Storage) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		st.SetMetricCounter(m.ID,*m.Delta)
+		st.SetMetricCounter(m.ID, *m.Delta)
 	default:
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
