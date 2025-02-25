@@ -50,6 +50,8 @@ func Gzip() gin.HandlerFunc {
 			gz := gzip.NewWriter(&buf)
 
 			writer := c.Writer
+			writer.Header().Set("Content-Encoding", "gzip")
+
 			c.Writer = &gzipResponseWriter{
 				ResponseWriter: writer,
 				gzipWriter:     gz,
@@ -58,9 +60,6 @@ func Gzip() gin.HandlerFunc {
 
 			defer func() {
 				gz.Close()
-
-				writer.Header().Set("Content-Encoding", "gzip")
-
 				writer.Write(buf.Bytes())
 			}()
 		}

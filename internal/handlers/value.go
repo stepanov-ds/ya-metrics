@@ -13,7 +13,7 @@ import (
 func Value(c *gin.Context, st storage.Storage) {
 	metricType := c.Param("metric_type")
 	metricName := c.Param("metric_name")
-	var m *utils.Metrics
+	var m utils.Metrics
 
 	if metricType == "" || metricName == "" {
 		if c.Request.Method == http.MethodPost {
@@ -48,15 +48,16 @@ func Value(c *gin.Context, st storage.Storage) {
 	}
 }
 
-func ValueWithJson(c *gin.Context, st storage.Storage) *utils.Metrics {
+func ValueWithJson(c *gin.Context, st storage.Storage) utils.Metrics {
 	var m utils.Metrics
 
 	defer c.Request.Body.Close()
-	if err := c.ShouldBindJSON(&m); err != nil {
+	if err := c.ShouldBindJSON(&m); err == nil {
 		c.JSON(http.StatusBadRequest, nil)
-		return &m
+		return m
 	} else {
-		return &utils.Metrics{}
+		println(err.Error())
+		return utils.Metrics{}
 	}
 }
 	// if m.ID == "" {
