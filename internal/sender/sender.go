@@ -12,7 +12,7 @@ import (
 )
 
 type Sender interface {
-	SendMetric(name string, metric utils.Metric) (*http.Response, error)
+	SendMetric(name string, metric utils.Metrics) (*http.Response, error)
 }
 
 type HTTPClient interface {
@@ -35,9 +35,8 @@ func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) H
 	}
 }
 
-func (s *HTTPSender) SendMetric(name string, m utils.Metric) (*http.Response, error) {
-	metric := m.ConstructJsonObj(name)
-	jsonBytes, err := json.Marshal(metric)
+func (s *HTTPSender) SendMetric(name string, m utils.Metrics) (*http.Response, error) {
+	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +53,8 @@ func (s *HTTPSender) SendMetric(name string, m utils.Metric) (*http.Response, er
 	return resp, err
 }
 
-func (s *HTTPSender) SendMetricGzip(name string, m utils.Metric) (*http.Response, error) {
-	metric := m.ConstructJsonObj(name)
-	jsonBytes, err := json.Marshal(metric)
+func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (*http.Response, error) {
+	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return nil, err
 	}

@@ -24,7 +24,7 @@ func TestUpdate(t *testing.T) {
 		args           args
 		metricName     string
 		expectedStatus int
-		expectedMetric utils.Metric
+		expectedMetric utils.Metrics
 	}{
 		// TODO: Add test cases.
 		{
@@ -107,7 +107,7 @@ func TestUpdate(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			metricName:     "testCounter",
-			expectedMetric: utils.NewMetricCounter(123),
+			expectedMetric: utils.NewMetrics("testCounter", 123, true),
 		},
 		{
 			name: "Positive #2 gauge",
@@ -117,7 +117,7 @@ func TestUpdate(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			metricName:     "testGauge",
-			expectedMetric: utils.NewMetricGauge(123.1),
+			expectedMetric: utils.NewMetrics("testGauge", 123.1, false),
 		},
 	}
 	for _, tt := range tests {

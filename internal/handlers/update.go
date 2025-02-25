@@ -2,12 +2,16 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stepanov-ds/ya-metrics/internal/config/server"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
@@ -16,6 +20,16 @@ func Update(c *gin.Context, st storage.Storage) {
 	metricType := c.Param("metric_type")
 	metricName := c.Param("metric_name")
 	metricValue := c.Param("value")
+	var m *utils.Metrics
+	defer func() {
+		if time.Since(server.LastFileWrite).Seconds() > float64(*server.StoreInterval) {
+			err := StoreInFile(st.GetAllMetrics())
+			if err != nil {
+				println(err.Error())
+			}
+			server.LastFileWrite = time.Now()
+		}
+	}()
 
 	if metricType == "" || metricName == "" || metricValue == "" {
 		if c.Request.Body != nil {
@@ -29,64 +43,87 @@ func Update(c *gin.Context, st storage.Storage) {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
-			UpdateWithJson(c, st)
+			m = UpdateWithJson(c, st)
+			metricName = m.ID
+			metricType = m.MType
+			if strings.ToLower(metricType) == "counter" {
+				metricValue = strconv.FormatInt(*m.Delta, 10)
+			} else if strings.ToLower(metricType) == "gauge" {
+				metricValue = strconv.FormatFloat(*m.Value, 'f', 3, 64)
+			} else {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+		} else {
+			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
-		c.AbortWithStatus(http.StatusNotFound)
-		return
 	}
 
 	if c.Request.Method != http.MethodPost {
 		c.AbortWithStatus(http.StatusMethodNotAllowed)
 		return
 	}
-
-	switch strings.ToLower(metricType) {
-	case "gauge":
-
-		gauge, err := strconv.ParseFloat(metricValue, 64)
+	if strings.ToLower(metricType) == "gauge"   {
+		v, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		st.SetMetricGauge(metricName, gauge)
-	case "counter":
-		counter, err := strconv.ParseInt(metricValue, 0, 64)
+		st.SetMetric(metricName, v, strings.ToLower(metricType) == "counter")
+	} else if strings.ToLower(metricType) == "counter" {
+		v, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		st.SetMetricCounter(metricName, counter)
-	default:
+		st.SetMetric(metricName, v, strings.ToLower(metricType) == "counter")
+	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	c.Data(http.StatusOK, "", nil)
+
 }
 
-func UpdateWithJson(c *gin.Context, st storage.Storage) {
+func UpdateWithJson(c *gin.Context, st storage.Storage) *utils.Metrics { //где-то тут хуета
 	var m utils.Metrics
 	if err := c.ShouldBindJSON(&m); err != nil {
-		c.JSON(http.StatusBadRequest, nil)
-		return
+		return &utils.Metrics{}
 	}
-	switch strings.ToLower(m.MType) {
-	case "gauge":
-		if m.Value == nil {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-		st.SetMetricGauge(m.ID, *m.Value)
-	case "counter":
-		if m.Delta == nil {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
-		st.SetMetricCounter(m.ID, *m.Delta)
-	default:
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+	return &m
+
+
+
+	// switch strings.ToLower(m.MType) {
+	// case "gauge":
+	// 	if m.Value == nil {
+	// 		c.AbortWithStatus(http.StatusBadRequest)
+	// 		return
+	// 	}
+	// 	st.SetMetricGauge(m.ID, *m.Value)
+	// case "counter":
+	// 	if m.Delta == nil {
+	// 		c.AbortWithStatus(http.StatusBadRequest)
+	// 		return
+	// 	}
+	// 	st.SetMetricCounter(m.ID, *m.Delta)
+	// default:
+	// 	c.AbortWithStatus(http.StatusBadRequest)
+	// 	return
+	// }
+	// c.JSON(http.StatusOK, nil)
+
+}
+
+func StoreInFile(metrics map[string]utils.Metrics) error {
+	jsonData, err := json.Marshal(metrics)
+	if err != nil {
+		return err
 	}
-	c.JSON(http.StatusOK, nil)
+	err = os.WriteFile(*server.FileStorePath, jsonData, os.FileMode(os.O_RDWR)|os.FileMode(os.O_CREATE)|os.FileMode(os.O_TRUNC))
+	if err != nil {
+		return err
+	}
+	return nil
 }

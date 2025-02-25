@@ -33,7 +33,7 @@ func TestCollector_CollectMetrics(t *testing.T) {
 				tt.c.CollectMetrics()
 			}
 			if value, ok := tt.c.Metrics.Load("PollCount"); ok {
-				if v, ok := value.(*utils.MetricCounter); ok {
+				if v, ok := value.(utils.Metrics); ok {
 					assert.Equal(t, tt.pollCount, v.Get())
 				} else {
 					assert.Fail(t, "metric PollCount is not utils.MetricCounter, metric PollCounter is ", reflect.TypeOf(value))

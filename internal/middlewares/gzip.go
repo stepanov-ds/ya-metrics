@@ -24,7 +24,6 @@ func (w *gzipResponseWriter) Write(data []byte) (int, error) {
 func Gzip() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetHeader("Content-Encoding") == "gzip" {
-			print("I AM GZIP")
 			body, err := io.ReadAll(c.Request.Body)
 			if err != nil {
 				c.AbortWithStatus(http.StatusBadRequest)

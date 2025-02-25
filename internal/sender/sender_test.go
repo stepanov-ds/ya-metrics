@@ -24,7 +24,7 @@ func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
 func TestHttpSender_SendMetric(t *testing.T) {
 	type args struct {
 		name   string
-		metric utils.Metric
+		metric utils.Metrics
 	}
 	tests := []struct {
 		name    string
