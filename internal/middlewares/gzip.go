@@ -38,7 +38,6 @@ func Gzip() gin.HandlerFunc {
 			decompressed, err := io.ReadAll(reader)
 			if err != nil {
 				print(err.Error())
-
 				c.AbortWithStatus(http.StatusBadRequest)
 			}
 

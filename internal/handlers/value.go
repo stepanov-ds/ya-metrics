@@ -51,69 +51,10 @@ func Value(c *gin.Context, st storage.Storage) {
 func ValueWithJson(c *gin.Context, st storage.Storage) utils.Metrics {
 	var m utils.Metrics
 
-	defer c.Request.Body.Close()
 	if err := c.ShouldBindJSON(&m); err == nil {
-		c.JSON(http.StatusBadRequest, nil)
 		return m
 	} else {
 		println(err.Error())
 		return utils.Metrics{}
 	}
 }
-	// if m.ID == "" {
-	// 	c.JSON(http.StatusBadRequest, nil)
-	// 	return
-	// }
-	// metric, found := st.GetMetric(m.ID)
-	// if found {
-	// 	if strings.ToLower(m.ID) == strings.ToLower(metric.MType) {
-	// 		c.String(http.StatusOK, fmt.Sprintf("%v", metric.Get()))
-	// 	} else {
-	// 		c.String(http.StatusNotFound, "")
-	// 	}
-	// } else {
-	// 	c.String(http.StatusNotFound, "")
-	// }
-
-	// switch strings.ToLower(m.MType) {
-	// case "gauge":
-	// 	metric, found := st.GetMetric(m.ID)
-	// 	if !found {
-	// 		c.JSON(http.StatusNotFound, nil)
-	// 		return
-	// 	}
-	// 	if reflect.TypeOf(metric) != reflect.TypeOf(&utils.MetricGauge{}) {
-	// 		c.JSON(http.StatusNotFound, nil)
-	// 		return
-	// 	}
-	// 	floatValue, ok := metric.Get().(float64)
-	// 	if !ok {
-	// 		c.JSON(http.StatusNotFound, nil)
-	// 		return
-	// 	}
-	// 	m.Value = &floatValue
-	// 	c.JSON(http.StatusOK, m)
-	// 	return
-	// case "counter":
-	// 	metric, found := st.GetMetric(m.ID)
-	// 	if !found {
-	// 		c.JSON(http.StatusNotFound, nil)
-	// 		return
-	// 	}
-	// 	if reflect.TypeOf(metric) != reflect.TypeOf(&utils.MetricCounter{}) {
-	// 		c.JSON(http.StatusNotFound, nil)
-	// 		return
-	// 	}
-	// 	floatValue, ok := metric.Get().(int64)
-	// 	if !ok {
-	// 		c.JSON(http.StatusNotFound, nil)
-	// 		return
-	// 	}
-	// 	m.Delta = &floatValue
-	// 	c.JSON(http.StatusOK, m)
-	// 	return
-	// default:
-	// 	c.JSON(http.StatusBadRequest, nil)
-	// 	return
-	// }
-
