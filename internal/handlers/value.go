@@ -52,18 +52,9 @@ func ValueWithJson(c *gin.Context, st storage.Storage) {
 
 	if err := c.ShouldBindJSON(&m); err == nil {
 		metricValue, found := st.GetMetric(m.ID)
-		if found {
-			if strings.EqualFold(strings.ToLower(m.MType), strings.ToLower(metricValue.MType)) {
-					if err != nil {
-						c.String(http.StatusInternalServerError, err.Error())
-						return
-					}
-					c.JSON(http.StatusOK, metricValue)
-					return
-			} else {
-				c.String(http.StatusNotFound, "")
-				return
-			}
+		if found && strings.EqualFold(strings.ToLower(m.MType), strings.ToLower(metricValue.MType)) {
+			c.JSON(http.StatusOK, metricValue)
+			return
 		} else {
 			c.String(http.StatusNotFound, "")
 			return

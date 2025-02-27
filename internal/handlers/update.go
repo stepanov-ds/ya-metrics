@@ -49,7 +49,7 @@ func Update(c *gin.Context, st storage.Storage) {
 			if strings.ToLower(metricType) == "counter" {
 				metricValue = strconv.FormatInt(*m.Delta, 10)
 			} else if strings.ToLower(metricType) == "gauge" {
-				metricValue = strconv.FormatFloat(*m.Value, 'f', 3, 64)
+				metricValue = strconv.FormatFloat(*m.Value, 'f', -1, 64)
 			} else {
 				c.AbortWithStatus(http.StatusBadRequest)
 			}
@@ -91,25 +91,6 @@ func UpdateWithJson(c *gin.Context, st storage.Storage) *utils.Metrics { //гд�
 		return &utils.Metrics{}
 	}
 	return &m
-
-	// switch strings.ToLower(m.MType) {
-	// case "gauge":
-	// 	if m.Value == nil {
-	// 		c.AbortWithStatus(http.StatusBadRequest)
-	// 		return
-	// 	}
-	// 	st.SetMetricGauge(m.ID, *m.Value)
-	// case "counter":
-	// 	if m.Delta == nil {
-	// 		c.AbortWithStatus(http.StatusBadRequest)
-	// 		return
-	// 	}
-	// 	st.SetMetricCounter(m.ID, *m.Delta)
-	// default:
-	// 	c.AbortWithStatus(http.StatusBadRequest)
-	// 	return
-	// }
-	// c.JSON(http.StatusOK, nil)
 
 }
 
