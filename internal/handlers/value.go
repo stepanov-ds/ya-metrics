@@ -24,7 +24,7 @@ func Value(c *gin.Context, st storage.Storage) {
 			return
 		}
 	}
-	
+
 	metricValue, found := st.GetMetric(metricName)
 	if found {
 		if strings.EqualFold(strings.ToLower(metricType), strings.ToLower(metricValue.MType)) {
@@ -72,6 +72,7 @@ func ValueWithJson(c *gin.Context, st storage.Storage) {
 		}
 	} else {
 		println(err.Error())
+		c.Writer.Header().Add("Content-Type", "application/json")
 		c.String(http.StatusBadRequest, "")
 		return
 	}
