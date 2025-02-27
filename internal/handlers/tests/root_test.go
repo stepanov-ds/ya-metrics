@@ -26,14 +26,14 @@ func TestRoot(t *testing.T) {
 			name:           "Positive #1 Get empty storage",
 			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
-			expectedBody:   "\"{}\"",
+			expectedBody:   "{}",
 			fillStorage:    false,
 		},
 		{
 			name:           "Positive #2 Get storage with rewrited Counter and rewrited Gauge",
 			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
-			expectedBody:   "\"{\\\"test1\\\":{\\\"id\\\":\\\"test1\\\",\\\"type\\\":\\\"counter\\\",\\\"delta\\\":5},\\\"test2\\\":{\\\"id\\\":\\\"test2\\\",\\\"type\\\":\\\"gauge\\\",\\\"value\\\":2.2}}\"",
+			expectedBody:   "{\"test1\":{\"id\":\"test1\",\"type\":\"counter\",\"delta\":5},\"test2\":{\"id\":\"test2\",\"type\":\"gauge\",\"value\":2.2}}",
 			fillStorage:    true,
 		},
 	}
