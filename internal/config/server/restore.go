@@ -13,13 +13,13 @@ import (
 func RestoreStorage() *storage.MemStorage {
 	content, err := os.ReadFile(*FileStorePath)
 	if err != nil {
-		//println("READ_ERR")
+		println(err.Error())
 		return storage.NewMemStorage(&sync.Map{})
 	}
 	var metrics map[string]utils.Metrics
 	err = json.Unmarshal(content, &metrics)
 	if err != nil {
-		//println("UNMARSHAL_ERR")
+		println(err.Error())
 		return storage.NewMemStorage(&sync.Map{})
 	}
 	var syncMap sync.Map
