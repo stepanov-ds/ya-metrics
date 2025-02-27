@@ -34,7 +34,7 @@ func (s *MemStorage) SetMetric(key string, value interface{}, counter bool) {
 		switch v := oldMetricValue.(type) {
 		case utils.Metrics:
 			v.Set(value, counter)
-			s.storage.Store(key, v) 
+			s.storage.Store(key, v)
 		}
 	} else {
 		s.storage.Store(key, utils.NewMetrics(key, value, counter))

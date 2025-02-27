@@ -63,7 +63,7 @@ func Update(c *gin.Context, st storage.Storage) {
 		c.AbortWithStatus(http.StatusMethodNotAllowed)
 		return
 	}
-	if strings.ToLower(metricType) == "gauge"   {
+	if strings.ToLower(metricType) == "gauge" {
 		v, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -83,7 +83,6 @@ func Update(c *gin.Context, st storage.Storage) {
 	}
 
 	c.Data(http.StatusOK, "", nil)
-
 }
 
 func UpdateWithJson(c *gin.Context, st storage.Storage) *utils.Metrics { //где-то тут хуета
@@ -92,8 +91,6 @@ func UpdateWithJson(c *gin.Context, st storage.Storage) *utils.Metrics { //гд�
 		return &utils.Metrics{}
 	}
 	return &m
-
-
 
 	// switch strings.ToLower(m.MType) {
 	// case "gauge":
