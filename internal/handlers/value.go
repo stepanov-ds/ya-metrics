@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
@@ -55,12 +54,11 @@ func ValueWithJson(c *gin.Context, st storage.Storage) {
 		metricValue, found := st.GetMetric(m.ID)
 		if found {
 			if strings.EqualFold(strings.ToLower(m.MType), strings.ToLower(metricValue.MType)) {
-					jsonResult, err := json.Marshal(metricValue)
 					if err != nil {
 						c.String(http.StatusInternalServerError, err.Error())
 						return
 					}
-					c.JSON(http.StatusOK, jsonResult)
+					c.JSON(http.StatusOK, metricValue)
 					return
 			} else {
 				c.String(http.StatusNotFound, "")
@@ -72,7 +70,6 @@ func ValueWithJson(c *gin.Context, st storage.Storage) {
 		}
 	} else {
 		println(err.Error())
-		c.Writer.Header().Add("Content-Type", "application/json")
 		c.String(http.StatusBadRequest, "")
 		return
 	}
