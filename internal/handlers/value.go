@@ -16,7 +16,7 @@ func Value(c *gin.Context, st storage.Storage) {
 
 	if metricType == "" || metricName == "" {
 		if c.Request.Method == http.MethodPost {
-			ValueWithJson(c, st)
+			ValueWithJSON(c, st)
 			return
 		} else {
 			c.AbortWithStatus(http.StatusNotFound)
@@ -47,7 +47,7 @@ func Value(c *gin.Context, st storage.Storage) {
 	}
 }
 
-func ValueWithJson(c *gin.Context, st storage.Storage) {
+func ValueWithJSON(c *gin.Context, st storage.Storage) {
 	var m utils.Metrics
 
 	if err := c.ShouldBindJSON(&m); err == nil {

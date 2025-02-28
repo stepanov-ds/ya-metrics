@@ -30,7 +30,7 @@ func Update(c *gin.Context, st storage.Storage) {
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
-			m = UpdateWithJson(c, st)
+			m = UpdateWithJSON(c, st)
 			metricName = m.ID
 			metricType = m.MType
 			if strings.ToLower(metricType) == "counter" {
@@ -72,7 +72,7 @@ func Update(c *gin.Context, st storage.Storage) {
 	c.Data(http.StatusOK, "", nil)
 }
 
-func UpdateWithJson(c *gin.Context, st storage.Storage) *utils.Metrics { //где-то тут хуета
+func UpdateWithJSON(c *gin.Context, st storage.Storage) *utils.Metrics { //где-то тут хуета
 	var m utils.Metrics
 	if err := c.ShouldBindJSON(&m); err != nil {
 		return &utils.Metrics{}

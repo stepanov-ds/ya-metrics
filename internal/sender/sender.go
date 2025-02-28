@@ -88,16 +88,17 @@ func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector
 	for {
 		for k, v := range collector.GetAllMetrics() {
 			if gzip {
-				_, err := s.SendMetricGzip(k, v)
+				resp, err := s.SendMetricGzip(k, v)
 				if err != nil {
 					println(err.Error())
 				}
+				resp.Body.Close()
 			} else {
-				_, err := s.SendMetric(k, v)
+				resp, err := s.SendMetric(k, v)
 				if err != nil {
 					println(err.Error())
 				}
-
+				resp.Body.Close()
 			}
 		}
 		time.Sleep(interval)
