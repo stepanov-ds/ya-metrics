@@ -35,42 +35,42 @@ func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) H
 	}
 }
 
-func (s *HTTPSender) SendMetric(name string, m utils.Metrics) (*http.Response, error) {
+func (s *HTTPSender) SendMetric(name string, m utils.Metrics) (error) {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+"/update", bytes.NewBuffer(jsonBytes))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header = s.Headers
 	resp, err := s.Client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	return resp, err
+	return err
 }
 
-func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (*http.Response, error) {
+func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (error) {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var buf bytes.Buffer
 	gzWriter := gzip.NewWriter(&buf)
 
 	if _, err := gzWriter.Write(jsonBytes); err != nil {
-		return nil, err
+		return err
 	}
 	if err := gzWriter.Close(); err != nil {
-		return nil, err
+		return err
 	}
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+"/update", &buf)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header = s.Headers
 	req.Header.Add("Content-Encoding", "gzip")
@@ -78,27 +78,25 @@ func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (*http.Respons
 
 	resp, err := s.Client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	return resp, err
+	return err
 }
 
 func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector, gzip bool) {
 	for {
 		for k, v := range collector.GetAllMetrics() {
 			if gzip {
-				resp, err := s.SendMetricGzip(k, v)
+				err := s.SendMetricGzip(k, v)
 				if err != nil {
 					println(err.Error())
 				}
-				resp.Body.Close()
 			} else {
-				resp, err := s.SendMetric(k, v)
+				err := s.SendMetric(k, v)
 				if err != nil {
 					println(err.Error())
 				}
-				resp.Body.Close()
 			}
 		}
 		time.Sleep(interval)
