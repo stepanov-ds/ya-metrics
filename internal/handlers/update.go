@@ -2,16 +2,12 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/internal/config/server"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
@@ -21,15 +17,6 @@ func Update(c *gin.Context, st storage.Storage) {
 	metricName := c.Param("metric_name")
 	metricValue := c.Param("value")
 	var m *utils.Metrics
-	defer func() {
-		if time.Since(server.LastFileWrite).Seconds() > float64(*server.StoreInterval) {
-			err := StoreInFile(st.GetAllMetrics())
-			if err != nil {
-				println(err.Error())
-			}
-			server.LastFileWrite = time.Now()
-		}
-	}()
 
 	if metricType == "" || metricName == "" || metricValue == "" {
 		if c.Request.Body != nil {
@@ -94,14 +81,4 @@ func UpdateWithJson(c *gin.Context, st storage.Storage) *utils.Metrics { //гд�
 
 }
 
-func StoreInFile(metrics map[string]utils.Metrics) error {
-	jsonData, err := json.Marshal(metrics)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(*server.FileStorePath, jsonData, os.FileMode(os.O_RDWR)|os.FileMode(os.O_CREATE)|os.FileMode(os.O_TRUNC))
-	if err != nil {
-		return err
-	}
-	return nil
-}
+

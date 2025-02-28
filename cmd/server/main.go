@@ -24,8 +24,10 @@ func main() {
 	}
 	r := gin.Default()
 	router.Route(r, st)
-
+	go server.StoreInFile(st)
 	if err := r.Run(*server.EndpointServer); err != nil {
 		panic(err)
 	}
+
+	select{}
 }

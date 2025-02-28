@@ -3,7 +3,8 @@ package server
 import (
 	"encoding/json"
 	"os"
-	// "reflect"
+	"time"
+
 	"sync"
 
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
@@ -29,3 +30,22 @@ func RestoreStorage() *storage.MemStorage {
 	}
 	return storage.NewMemStorage(&syncMap)
 }
+
+
+func storeInFile(s *storage.MemStorage) {
+	jsonData, err := json.Marshal(s.GetAllMetrics())
+	if err != nil {
+		println(err.Error())
+	}
+	err = os.WriteFile(*FileStorePath, jsonData, os.FileMode(os.O_RDWR)|os.FileMode(os.O_CREATE)|os.FileMode(os.O_TRUNC))
+	if err != nil {
+		println(err.Error())
+	}
+}
+func StoreInFile(s *storage.MemStorage) {
+	for {
+		time.Sleep(time.Second * time.Duration(*StoreInterval))
+		storeInFile(s)
+	}
+}
+
