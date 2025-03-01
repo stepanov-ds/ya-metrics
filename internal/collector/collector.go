@@ -2,6 +2,7 @@ package collector
 
 import (
 	"math/rand"
+	"reflect"
 	"runtime"
 	"sync"
 	"time"
@@ -53,31 +54,33 @@ func (c *Collector) CollectMetrics() {
 	}
 
 	for k, v := range metrics {
-		c.Metrics.Store(k, utils.NewMetricGauge(v))
+		c.Metrics.Store(k, utils.NewMetrics(k, v, false))
 	}
 
 	if value, exist := c.Metrics.Load("PollCount"); exist {
-		if v, ok := value.(*utils.MetricCounter); ok {
-			v.Set(1)
+		if v, ok := value.(utils.Metrics); ok {
+			v.Set(1, true)
 		} else {
-			c.Metrics.Store("PollCount", utils.NewMetricCounter(1))
+			c.Metrics.Store("PollCount", utils.NewMetrics("PollCount", 1, true))
 		}
 	} else {
-		c.Metrics.Store("PollCount", utils.NewMetricCounter(1))
+		c.Metrics.Store("PollCount", utils.NewMetrics("PollCount", 1, true))
 	}
 
-	c.Metrics.Store("RandomValue", utils.NewMetricGauge(rand.Float64()))
+	c.Metrics.Store("RandomValue", utils.NewMetrics("RandomValue", rand.Float64(), false))
 
 }
-func (c *Collector) GetAllMetrics() map[string]utils.Metric {
-	result := make(map[string]utils.Metric)
+func (c *Collector) GetAllMetrics() map[string]utils.Metrics {
+	result := make(map[string]utils.Metrics)
 
 	c.Metrics.Range(func(key, value interface{}) bool {
 		k, ok1 := key.(string)
-		v, ok2 := value.(utils.Metric)
+		v, ok2 := value.(utils.Metrics)
 
 		if ok1 && ok2 {
 			result[k] = v
+		} else {
+			println(ok1, ok2, reflect.TypeOf(key).String(), reflect.TypeOf(value).String())
 		}
 		return true
 	})
@@ -89,7 +92,6 @@ func (c *Collector) collect(interval time.Duration) {
 	for {
 		c.CollectMetrics()
 		time.Sleep(interval)
-		println(interval)
 	}
 }
 

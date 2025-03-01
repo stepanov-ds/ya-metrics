@@ -16,44 +16,39 @@ func NewMemStorage(m *sync.Map) *MemStorage {
 	}
 }
 
-func (s *MemStorage) GetMetric(key string) (utils.Metric, bool) {
+func (s *MemStorage) GetMetric(key string) (utils.Metrics, bool) {
 	value, found := s.storage.Load(key)
 	if !found {
-		return nil, false
+		return utils.Metrics{}, false
 	}
-	metric, ok := value.(utils.Metric)
+	metric, ok := value.(utils.Metrics)
 	if !ok {
-		return nil, false
+		return utils.Metrics{}, false
 	}
 	return metric, true
 }
 
-func (s *MemStorage) SetMetricGauge(key string, value float64) {
-	s.storage.Store(key, utils.NewMetricGauge(value))
-}
-
-func (s *MemStorage) SetMetricCounter(key string, value int64) {
+func (s *MemStorage) SetMetric(key string, value interface{}, counter bool) {
 	oldMetricValue, found := s.storage.Load(key)
 	if found {
 		switch v := oldMetricValue.(type) {
-		case *utils.MetricCounter:
-			v.Set(value)
-			s.storage.Store(key, v) // Обновляем значение в sync.Map
-		case *utils.MetricGauge:
-			s.storage.Store(key, utils.NewMetricCounter(value))
+		case utils.Metrics:
+			v.Set(value, counter)
+			s.storage.Store(key, v)
 		}
 	} else {
-		s.storage.Store(key, utils.NewMetricCounter(value))
+		s.storage.Store(key, utils.NewMetrics(key, value, counter))
 	}
 }
 
-func (s *MemStorage) GetAllMetrics() map[string]utils.Metric {
-	result := make(map[string]utils.Metric)
+func (s *MemStorage) GetAllMetrics() map[string]utils.Metrics {
+	result := make(map[string]utils.Metrics)
 	s.storage.Range(func(key, value interface{}) bool {
-		if metric, ok := value.(utils.Metric); ok {
+		if metric, ok := value.(utils.Metrics); ok {
 			result[key.(string)] = metric
 		}
 		return true
 	})
 	return result
 }
+

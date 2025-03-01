@@ -15,29 +15,53 @@ func Value(c *gin.Context, st storage.Storage) {
 	metricName := c.Param("metric_name")
 
 	if metricType == "" || metricName == "" {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
+		if c.Request.Method == http.MethodPost {
+			ValueWithJSON(c, st)
+			return
+		} else {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
 	}
+
 	metricValue, found := st.GetMetric(metricName)
 	if found {
-		switch v := metricValue.(type) {
-		case *utils.MetricCounter:
-			if strings.ToLower(metricType) == "counter" {
-				c.String(http.StatusOK, fmt.Sprintf("%v", v.Get()))
-			} else {
-				c.String(http.StatusNotFound, "")
-			}
-		case *utils.MetricGauge:
-			if strings.ToLower(metricType) == "gauge" {
-				result := fmt.Sprintf("%.3f", v.Get())
+		if strings.EqualFold(strings.ToLower(metricType), strings.ToLower(metricValue.MType)) {
+			if strings.ToLower(metricValue.MType) == "gauge" {
+				result := fmt.Sprintf("%.3f", metricValue.Get())
 				result = strings.TrimRight(result, "0")
 				result = strings.TrimRight(result, ".")
 				c.String(http.StatusOK, result)
+				return
 			} else {
-				c.String(http.StatusNotFound, "")
+				c.String(http.StatusOK, fmt.Sprintf("%d", metricValue.Get()))
+				return
 			}
+		} else {
+			c.String(http.StatusNotFound, "")
+			return
 		}
 	} else {
 		c.String(http.StatusNotFound, "")
+		return
+	}
+}
+
+func ValueWithJSON(c *gin.Context, st storage.Storage) {
+	var m utils.Metrics
+
+	if err := c.ShouldBindJSON(&m); err == nil {
+		metricValue, found := st.GetMetric(m.ID)
+		if found && strings.EqualFold(strings.ToLower(m.MType), strings.ToLower(metricValue.MType)) {
+			c.JSON(http.StatusOK, metricValue)
+			return
+		} else {
+			c.String(http.StatusNotFound, "")
+			return
+		}
+	} else {
+		println(err.Error())
+		c.String(http.StatusBadRequest, "")
+		return
 	}
 }

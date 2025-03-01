@@ -26,24 +26,24 @@ func TestRoot(t *testing.T) {
 			name:           "Positive #1 Get empty storage",
 			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
-			expectedBody:   "\"{}\"",
+			expectedBody:   "{}",
 			fillStorage:    false,
 		},
 		{
 			name:           "Positive #2 Get storage with rewrited Counter and rewrited Gauge",
 			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
-			expectedBody:   "\"{\\\"test1\\\":{\\\"Counter\\\":5},\\\"test2\\\":{\\\"Gauge\\\":2.2}}\"",
+			expectedBody:   "{\"test1\":{\"id\":\"test1\",\"type\":\"counter\",\"delta\":5},\"test2\":{\"id\":\"test2\",\"type\":\"gauge\",\"value\":2.2}}",
 			fillStorage:    true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.fillStorage {
-				tt.st.SetMetricCounter("test1", 1)
-				tt.st.SetMetricCounter("test1", 4)
-				tt.st.SetMetricGauge("test2", 1.1)
-				tt.st.SetMetricGauge("test2", 2.2)
+				tt.st.SetMetric("test1", 1, true)
+				tt.st.SetMetric("test1", 4, true)
+				tt.st.SetMetric("test2", 1.1, false)
+				tt.st.SetMetric("test2", 2.2, false)
 			}
 
 			gin.SetMode(gin.TestMode)
