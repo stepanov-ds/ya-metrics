@@ -6,12 +6,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stepanov-ds/ya-metrics/internal/config/server"
+	"github.com/stepanov-ds/ya-metrics/internal/logger"
+	"go.uber.org/zap"
 )
 
 func Ping(c *gin.Context, pool *pgxpool.Pool) {
 	err := pool.Ping(context.Background())
 	if err != nil {
 		println(err.Error())
+		logger.Log.Info("Connections string: ", zap.String("Database_DSN", *server.Database_DSN))
 		c.String(http.StatusInternalServerError, "")
 	} else {
 		c.String(http.StatusOK, "")
