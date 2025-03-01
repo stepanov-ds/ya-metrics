@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 	"strconv"
-	"time"
 )
 
 var (
@@ -12,7 +11,7 @@ var (
 	StoreInterval  = flag.Int("i", 300, "store interval")
 	FileStorePath  = flag.String("f", "filestore.out", "file store path")
 	Restore        = flag.Bool("r", true, "restore")
-	LastFileWrite  = time.Now()
+	Database_DSN   = flag.String("d", "host=localhost port=5432 dbname=postgres user=usr password=123 sslmode=disable", "database_DSN")
 )
 
 func ConfigServer() {
@@ -38,5 +37,9 @@ func ConfigServer() {
 		if err == nil {
 			Restore = &b
 		}
+	}
+	dsn, found := os.LookupEnv("DATABASE_DSN")
+	if found {
+		Database_DSN = &dsn
 	}
 }
