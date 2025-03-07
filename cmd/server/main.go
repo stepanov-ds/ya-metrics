@@ -2,39 +2,43 @@ package main
 
 import (
 	"context"
+	"strconv"
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stepanov-ds/ya-metrics/internal/config/server"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers/router"
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
+	"go.uber.org/zap"
 )
 
 //metricstest -test.v -test.run=^TestIteration3[AB]$ -binary-path=cmd/server/server
 
 func main() {
-	server.ConfigServer()
-	pool, err := pgxpool.New(context.Background(), *server.Database_DSN)
-	if err != nil {
-		println(err.Error())
-	}
-	defer pool.Close()
 	logger.Initialize("info")
-	
-	var st *storage.MemStorage
-	if *server.Restore {
-		st = server.RestoreStorage()
+	server.ConfigServer()
+	var st storage.Storage
+
+	if server.IsDb {
+		st = storage.NewDbStorage(storage.NewDbPool(context.Background(), *server.Database_DSN))
+		defer st.(*storage.DbStorage).Pool.Close()
 	} else {
-		st = storage.NewMemStorage(&sync.Map{})
+		if *server.Restore {
+			st = server.RestoreStorage()
+		} else {
+			st = storage.NewMemStorage(&sync.Map{})
+		}
+		go server.StoreInFile(st.(*storage.MemStorage))
 	}
+	logger.Log.Info("main", zap.String("working with DB", strconv.FormatBool(server.IsDb)))
+
 	r := gin.Default()
-	router.Route(r, st, pool)
-	go server.StoreInFile(st)
+	router.MainRoute(r, st)
+
 	if err := r.Run(*server.EndpointServer); err != nil {
 		panic(err)
 	}
 
-	select{}
+	select {}
 }

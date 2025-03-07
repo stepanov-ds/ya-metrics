@@ -8,7 +8,7 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 )
 
-func Route(r *gin.Engine, st *storage.MemStorage, pool *pgxpool.Pool) {
+func MainRoute(r *gin.Engine, st storage.Storage) {
 	r.Use(middlewares.Gzip())
 	r.Use(middlewares.WithLogging())
 
@@ -36,13 +36,16 @@ func Route(r *gin.Engine, st *storage.MemStorage, pool *pgxpool.Pool) {
 	r.POST("/value/", func(ctx *gin.Context) {
 		handlers.Value(ctx, st)
 	})
+	r.GET("/", func(ctx *gin.Context) {
+		handlers.Root(ctx, st)
+	})
+}
+
+func DBRoute(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.GET("/ping", func(ctx *gin.Context) {
 		handlers.Ping(ctx, pool)
 	})
 	r.GET("/ping/", func(ctx *gin.Context) {
 		handlers.Ping(ctx, pool)
-	})
-	r.GET("/", func(ctx *gin.Context) {
-		handlers.Root(ctx, st)
 	})
 }

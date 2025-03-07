@@ -35,7 +35,7 @@ func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) H
 	}
 }
 
-func (s *HTTPSender) SendMetric(name string, m utils.Metrics) (error) {
+func (s *HTTPSender) SendMetric(name string, m utils.Metrics) error {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func (s *HTTPSender) SendMetric(name string, m utils.Metrics) (error) {
 	return err
 }
 
-func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (error) {
+func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) error {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return err

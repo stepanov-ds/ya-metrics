@@ -80,5 +80,3 @@ func UpdateWithJSON(c *gin.Context, st storage.Storage) *utils.Metrics { //гд�
 	return &m
 
 }
-
-

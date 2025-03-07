@@ -51,4 +51,3 @@ func (s *MemStorage) GetAllMetrics() map[string]utils.Metrics {
 	})
 	return result
 }
-

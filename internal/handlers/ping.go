@@ -14,7 +14,7 @@ func Ping(c *gin.Context, pool *pgxpool.Pool) {
 	err := pool.Ping(context.Background())
 	if err != nil {
 		println(err.Error())
-		logger.Log.Info("Connection error: ", 
+		logger.Log.Info("Connection error: ",
 			zap.String("Error", err.Error()),
 		)
 		c.String(http.StatusInternalServerError, "")

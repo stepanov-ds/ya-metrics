@@ -31,7 +31,6 @@ func RestoreStorage() *storage.MemStorage {
 	return storage.NewMemStorage(&syncMap)
 }
 
-
 func storeInFile(s *storage.MemStorage) {
 	jsonData, err := json.Marshal(s.GetAllMetrics())
 	if err != nil {
@@ -48,4 +47,3 @@ func StoreInFile(s *storage.MemStorage) {
 		storeInFile(s)
 	}
 }
-
