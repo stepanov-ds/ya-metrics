@@ -11,6 +11,11 @@ import (
 )
 
 func Ping(c *gin.Context, pool *pgxpool.Pool) {
+	if pool == nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
 	err := pool.Ping(context.Background())
 	if err != nil {
 		println(err.Error())
