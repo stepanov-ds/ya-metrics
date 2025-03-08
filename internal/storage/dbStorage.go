@@ -33,11 +33,6 @@ func NewDbStorage(p *pgxpool.Pool) *DbStorage {
     		"Value" double precision,
     		CONSTRAINT metrics_pkey PRIMARY KEY ("ID")
 		)
-
-		TABLESPACE pg_default;
-
-		ALTER TABLE IF EXISTS public.metrics
-    		OWNER to usr;
 	`
 	_, err := p.Exec(context.Background(), query)
 	if err != nil {
