@@ -85,7 +85,7 @@ func (st *DbStorage) SetMetric(key string, value interface{}, counter bool) {
 		VALUES ($1, $2, $3)
 		ON CONFLICT ("ID") DO UPDATE SET
 			"MType" = EXCLUDED."MType",
-			"Delta" = public.metrics."Delta" + EXCLUDED."Delta",
+			"Delta" = COALESCE(public.metrics."Delta", 0) + EXCLUDED."Delta",
 			"Value" = NULL;
 	`
 	query2 := `
