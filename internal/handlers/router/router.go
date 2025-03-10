@@ -45,4 +45,10 @@ func MainRoute(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.GET("/ping/", func(ctx *gin.Context) {
 		handlers.Ping(ctx, pool)
 	})
+	r.POST("/updates", func(ctx *gin.Context) {
+		handlers.Updates(ctx, st)
+	})
+	r.POST("/updates/", func(ctx *gin.Context) {
+		handlers.Updates(ctx, st)
+	})
 }

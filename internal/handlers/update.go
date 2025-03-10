@@ -39,6 +39,7 @@ func Update(c *gin.Context, st storage.Storage) {
 				metricValue = strconv.FormatFloat(*m.Value, 'f', -1, 64)
 			} else {
 				c.AbortWithStatus(http.StatusBadRequest)
+				return
 			}
 		} else {
 			c.AbortWithStatus(http.StatusNotFound)
@@ -72,7 +73,7 @@ func Update(c *gin.Context, st storage.Storage) {
 	c.Data(http.StatusOK, "", nil)
 }
 
-func UpdateWithJSON(c *gin.Context, st storage.Storage) *utils.Metrics { //где-то тут хуета
+func UpdateWithJSON(c *gin.Context, st storage.Storage) *utils.Metrics {
 	var m utils.Metrics
 	if err := c.ShouldBindJSON(&m); err != nil {
 		return &utils.Metrics{}
