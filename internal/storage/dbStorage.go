@@ -45,7 +45,7 @@ func NewDbStorage(p *pgxpool.Pool) *DbStorage {
 }
 
 func (st *DbStorage) GetMetric(key string) (utils.Metrics, bool) {
-	query := "SELECT ID, MType, Delta, Value FROM public.metrics WHERE ID = $1;"
+	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics WHERE "ID" = $1;`
 
 	row := st.Pool.QueryRow(context.Background(), query, key)
 
@@ -60,7 +60,7 @@ func (st *DbStorage) GetMetric(key string) (utils.Metrics, bool) {
 }
 
 func (st *DbStorage) GetAllMetrics() map[string]utils.Metrics {
-	query := "SELECT ID, MType, Delta, Value FROM public.metrics;"
+	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics;`
 
 	rows, err := st.Pool.Query(context.Background(), query)
 	if err != nil {
