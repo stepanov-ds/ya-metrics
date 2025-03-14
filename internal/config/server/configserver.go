@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 	"strconv"
-	"time"
 )
 
 var (
@@ -12,7 +11,8 @@ var (
 	StoreInterval  = flag.Int("i", 300, "store interval")
 	FileStorePath  = flag.String("f", "filestore.out", "file store path")
 	Restore        = flag.Bool("r", true, "restore")
-	LastFileWrite  = time.Now()
+	DatabaseDSN   = flag.String("d", "", "database_DSN")
+	IsDB           = false
 )
 
 func ConfigServer() {
@@ -38,5 +38,13 @@ func ConfigServer() {
 		if err == nil {
 			Restore = &b
 		}
+	}
+	dsn, found := os.LookupEnv("DATABASE_DSN")
+	if found {
+		DatabaseDSN = &dsn
+	}
+
+	if *DatabaseDSN != "" {
+		IsDB = true
 	}
 }

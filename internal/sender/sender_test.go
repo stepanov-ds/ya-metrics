@@ -23,7 +23,6 @@ func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
 
 func TestHttpSender_SendMetric(t *testing.T) {
 	type args struct {
-		name   string
 		metric utils.Metrics
 	}
 	tests := []struct {
@@ -101,7 +100,7 @@ func TestHttpSender_SendMetric(t *testing.T) {
 					},
 					Client: MockClient,
 				}
-				err := sender.SendMetric(tt.args.name, tt.args.metric)
+				err := sender.SendMetric(tt.args.metric, "/update")
 				if err != nil {
 					assert.Fail(t, err.Error())
 				}
@@ -119,7 +118,7 @@ func TestHttpSender_SendMetric(t *testing.T) {
 					},
 					Client: MockClient,
 				}
-				err := sender.SendMetric(tt.args.name, tt.args.metric)
+				err := sender.SendMetric(tt.args.metric, "/update")
 				assert.Error(t, err)
 			}
 			if len(tt.name) >= 11 && tt.name[:11] == "Negative #2" {
@@ -135,7 +134,7 @@ func TestHttpSender_SendMetric(t *testing.T) {
 					},
 					Client: MockClient,
 				}
-				err := sender.SendMetric(tt.args.name, tt.args.metric)
+				err := sender.SendMetric(tt.args.metric, "/update")
 				assert.Error(t, err)
 			}
 		})

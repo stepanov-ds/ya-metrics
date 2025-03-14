@@ -32,6 +32,11 @@ func (m *Metrics) Get() interface{} {
 
 func (m *Metrics) Set(value interface{}, counter bool) {
 	v := reflect.ValueOf(value)
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
 	if counter {
 		m.MType = "counter"
 		switch v.Kind() {

@@ -2,12 +2,13 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers"
 	"github.com/stepanov-ds/ya-metrics/internal/middlewares"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 )
 
-func Route(r *gin.Engine, st *storage.MemStorage) {
+func MainRoute(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.Use(middlewares.Gzip())
 	r.Use(middlewares.WithLogging())
 
@@ -37,5 +38,17 @@ func Route(r *gin.Engine, st *storage.MemStorage) {
 	})
 	r.GET("/", func(ctx *gin.Context) {
 		handlers.Root(ctx, st)
+	})
+	r.GET("/ping", func(ctx *gin.Context) {
+		handlers.Ping(ctx, pool)
+	})
+	r.GET("/ping/", func(ctx *gin.Context) {
+		handlers.Ping(ctx, pool)
+	})
+	r.POST("/updates", func(ctx *gin.Context) {
+		handlers.Updates(ctx, st)
+	})
+	r.POST("/updates/", func(ctx *gin.Context) {
+		handlers.Updates(ctx, st)
 	})
 }
