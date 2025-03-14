@@ -24,7 +24,7 @@ func WithLogging() gin.HandlerFunc {
 		var bodyBuf bytes.Buffer
 		loggedWriter := &LoggedResponseWriter{
 			ResponseWriter: originalWriter,
-            Body:           &bodyBuf,
+			Body:           &bodyBuf,
 		}
 		c.Writer = loggedWriter
 
@@ -51,14 +51,14 @@ func WithLogging() gin.HandlerFunc {
 
 type LoggedResponseWriter struct {
 	gin.ResponseWriter
-    Body *bytes.Buffer
+	Body *bytes.Buffer
 }
 
 func (w *LoggedResponseWriter) Write(b []byte) (int, error) {
-    w.Body.Write(b)
-    return w.ResponseWriter.Write(b)
+	w.Body.Write(b)
+	return w.ResponseWriter.Write(b)
 }
 
 func (w *LoggedResponseWriter) WriteHeader(code int) {
-    w.ResponseWriter.WriteHeader(code)
+	w.ResponseWriter.WriteHeader(code)
 }

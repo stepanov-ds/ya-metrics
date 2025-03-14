@@ -3,10 +3,12 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/stepanov-ds/ya-metrics/internal/collector"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
@@ -40,16 +42,22 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, s.BaseURL + path, bytes.NewBuffer(jsonBytes))
+	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return err
 	}
 	req.Header = s.Headers
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		return err
+
+	operation := func() (string, error) {
+		resp, err := s.Client.Do(req)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+		return "", err
 	}
-	defer resp.Body.Close()
+
+	_, err = backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
 	return err
 }
 
@@ -68,7 +76,7 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	if err := gzWriter.Close(); err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, s.BaseURL + path, &buf)
+	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, &buf)
 	if err != nil {
 		return err
 	}
@@ -76,11 +84,16 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	req.Header.Add("Content-Encoding", "gzip")
 	req.Header.Add("Accept-Encoding", "gzip")
 
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		return err
+	operation := func() (string, error) {
+		resp, err := s.Client.Do(req)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+		return "", err
 	}
-	defer resp.Body.Close()
+
+	_, err = backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
 	return err
 }
 

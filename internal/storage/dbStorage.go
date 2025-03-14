@@ -2,7 +2,9 @@ package storage
 
 import (
 	"context"
+	"time"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
@@ -34,7 +36,13 @@ func NewDbStorage(p *pgxpool.Pool) *DbStorage {
     		CONSTRAINT metrics_pkey PRIMARY KEY ("ID")
 		)
 	`
-	_, err := p.Exec(context.Background(), query)
+
+	operation := func() (string, error) {
+		_, err := p.Exec(context.Background(), query)
+		return "", err
+	}
+
+	_, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
 	if err != nil {
 		logger.Log.Error("NewDbStorage", zap.String("error while creating table in DB", err.Error()))
 	}
@@ -47,26 +55,38 @@ func NewDbStorage(p *pgxpool.Pool) *DbStorage {
 func (st *DbStorage) GetMetric(key string) (utils.Metrics, bool) {
 	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics WHERE "ID" = $1;`
 
-	row := st.Pool.QueryRow(context.Background(), query, key)
+	operation := func() (utils.Metrics, error) {
+		row := st.Pool.QueryRow(context.Background(), query, key)
 
-	var m utils.Metrics
-	if err := row.Scan(&m.ID, &m.MType, &m.Delta, &m.Value); err != nil {
-		if err != pgx.ErrNoRows {
-			logger.Log.Error("GetMetric", zap.String("error while parsing row result", err.Error()))
-		}
-		return m, false
+		var m utils.Metrics
+		err := row.Scan(&m.ID, &m.MType, &m.Delta, &m.Value)
+		return m, err
 	}
-	return m, true
+
+	metric, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
+	if err != nil {
+		logger.Log.Error("GetMetric", zap.String("error while select from DB", err.Error()))
+		return metric, false
+	}
+	return metric, true
 }
 
 func (st *DbStorage) GetAllMetrics() map[string]utils.Metrics {
 	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics;`
 
-	rows, err := st.Pool.Query(context.Background(), query)
+	operation := func() (pgx.Rows, error) {
+		rows, err := st.Pool.Query(context.Background(), query)
+		if err != nil {
+			return rows, err
+		}
+		defer rows.Close()
+		return rows, err
+	}
+
+	rows, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
 	if err != nil {
 		logger.Log.Error("GetAllMetric", zap.String("error while select from DB", err.Error()))
 	}
-	defer rows.Close()
 
 	metrics := make(map[string]utils.Metrics)
 	for rows.Next() {
@@ -96,18 +116,20 @@ func (st *DbStorage) SetMetric(key string, value interface{}, counter bool) {
 			"Value" = EXCLUDED."Value",
 			"Delta" = Null;
 	`
-	if counter {
-		_, err := st.Pool.Exec(context.Background(), query1, key, "counter", value)
-		if err != nil {
-			logger.Log.Error("SetMetric", zap.String("error while insert in DB", err.Error()))
-			return
-		}
-	} else {
-		_, err := st.Pool.Exec(context.Background(), query2, key, "gauge", value)
-		if err != nil {
-			logger.Log.Error("SetMetric", zap.String("error while insert in DB", err.Error()))
-			return
+
+	operation := func() (string, error) {
+		if counter {
+			_, err := st.Pool.Exec(context.Background(), query1, key, "counter", value)
+			return "", err
+		} else {
+			_, err := st.Pool.Exec(context.Background(), query2, key, "gauge", value)
+			return "", err
 		}
 	}
 
+	_, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
+	if err != nil {
+		logger.Log.Error("SetMetric", zap.String("error while insert in DB", err.Error()))
+		return
+	}
 }

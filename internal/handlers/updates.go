@@ -21,18 +21,16 @@ func Updates(c *gin.Context, st storage.Storage) {
 
 	if _, ok := st.(*storage.DbStorage); ok {
 		ctx := c.Request.Context()
-        tx, err := st.(*storage.DbStorage).Pool.Begin(ctx)
-    	if err != nil {
-        	logger.Log.Error("Updates", zap.String("error while starting transaction", err.Error()))
-    	}
+		tx, err := st.(*storage.DbStorage).Pool.Begin(ctx)
+		if err != nil {
+			logger.Log.Error("Updates", zap.String("error while starting transaction", err.Error()))
+		}
 		defer func() {
 			if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
 				logger.Log.Error("Updates", zap.String("error while rollback", err.Error()))
 			}
 		}()
-    }
-
-	
+	}
 
 	for _, item := range m {
 		if item.MType == "counter" {

@@ -37,7 +37,6 @@ func main() {
 	}
 	logger.Log.Info("main", zap.String("working with DB", strconv.FormatBool(server.IsDb)))
 
-
 	if err := r.Run(*server.EndpointServer); err != nil {
 		panic(err)
 	}

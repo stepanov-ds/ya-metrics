@@ -34,8 +34,8 @@ func (m *Metrics) Set(value interface{}, counter bool) {
 	v := reflect.ValueOf(value)
 
 	if v.Kind() == reflect.Ptr {
-        v = v.Elem()
-    }
+		v = v.Elem()
+	}
 
 	if counter {
 		m.MType = "counter"
