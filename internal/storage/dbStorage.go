@@ -12,20 +12,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type DbStorage struct {
+type DBStorage struct {
 	Pool *pgxpool.Pool
 }
 
-func NewDbPool(ctx context.Context, dsn string) *pgxpool.Pool {
+func NewDBPool(ctx context.Context, dsn string) *pgxpool.Pool {
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		logger.Log.Error("NewDbPool", zap.String("error while creating new DB pool", err.Error()))
+		logger.Log.Error("NewDBPool", zap.String("error while creating new DB pool", err.Error()))
 		return nil
 	}
 	return pool
 }
 
-func NewDbStorage(p *pgxpool.Pool) *DbStorage {
+func NewDBStorage(p *pgxpool.Pool) *DBStorage {
 	query := `
 		CREATE TABLE IF NOT EXISTS public.metrics
 		(
@@ -44,15 +44,15 @@ func NewDbStorage(p *pgxpool.Pool) *DbStorage {
 
 	_, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
 	if err != nil {
-		logger.Log.Error("NewDbStorage", zap.String("error while creating table in DB", err.Error()))
+		logger.Log.Error("NewDBStorage", zap.String("error while creating table in DB", err.Error()))
 	}
 
-	return &DbStorage{
+	return &DBStorage{
 		Pool: p,
 	}
 }
 
-func (st *DbStorage) GetMetric(key string) (utils.Metrics, bool) {
+func (st *DBStorage) GetMetric(key string) (utils.Metrics, bool) {
 	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics WHERE "ID" = $1;`
 
 	operation := func() (utils.Metrics, error) {
@@ -71,7 +71,7 @@ func (st *DbStorage) GetMetric(key string) (utils.Metrics, bool) {
 	return metric, true
 }
 
-func (st *DbStorage) GetAllMetrics() map[string]utils.Metrics {
+func (st *DBStorage) GetAllMetrics() map[string]utils.Metrics {
 	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics;`
 
 	operation := func() (pgx.Rows, error) {
@@ -99,7 +99,7 @@ func (st *DbStorage) GetAllMetrics() map[string]utils.Metrics {
 	return metrics
 }
 
-func (st *DbStorage) SetMetric(key string, value interface{}, counter bool) {
+func (st *DBStorage) SetMetric(key string, value interface{}, counter bool) {
 	query1 := `
 		INSERT INTO public.metrics ("ID", "MType", "Delta")
 		VALUES ($1, $2, $3)

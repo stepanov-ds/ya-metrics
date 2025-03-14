@@ -19,9 +19,9 @@ func Updates(c *gin.Context, st storage.Storage) {
 		return
 	}
 
-	if _, ok := st.(*storage.DbStorage); ok {
+	if _, ok := st.(*storage.DBStorage); ok {
 		ctx := c.Request.Context()
-		tx, err := st.(*storage.DbStorage).Pool.Begin(ctx)
+		tx, err := st.(*storage.DBStorage).Pool.Begin(ctx)
 		if err != nil {
 			logger.Log.Error("Updates", zap.String("error while starting transaction", err.Error()))
 		}

@@ -22,10 +22,10 @@ func main() {
 	r := gin.Default()
 	var st storage.Storage
 
-	if server.IsDb {
-		st = storage.NewDbStorage(storage.NewDbPool(context.Background(), *server.Database_DSN))
-		defer st.(*storage.DbStorage).Pool.Close()
-		router.MainRoute(r, st, st.(*storage.DbStorage).Pool)
+	if server.IsDB {
+		st = storage.NewDBStorage(storage.NewDBPool(context.Background(), *server.DatabaseDSN))
+		defer st.(*storage.DBStorage).Pool.Close()
+		router.MainRoute(r, st, st.(*storage.DBStorage).Pool)
 	} else {
 		if *server.Restore {
 			st = server.RestoreStorage()
@@ -35,7 +35,7 @@ func main() {
 		go server.StoreInFile(st.(*storage.MemStorage))
 		router.MainRoute(r, st, nil)
 	}
-	logger.Log.Info("main", zap.String("working with DB", strconv.FormatBool(server.IsDb)))
+	logger.Log.Info("main", zap.String("working with DB", strconv.FormatBool(server.IsDB)))
 
 	if err := r.Run(*server.EndpointServer); err != nil {
 		panic(err)
