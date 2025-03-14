@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cenkalti/backoff/v5"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
@@ -42,7 +42,7 @@ func NewDbStorage(p *pgxpool.Pool) *DbStorage {
 		return "", err
 	}
 
-	_, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
+	_, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
 	if err != nil {
 		logger.Log.Error("NewDbStorage", zap.String("error while creating table in DB", err.Error()))
 	}
@@ -63,7 +63,7 @@ func (st *DbStorage) GetMetric(key string) (utils.Metrics, bool) {
 		return m, err
 	}
 
-	metric, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
+	metric, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
 	if err != nil {
 		logger.Log.Error("GetMetric", zap.String("error while select from DB", err.Error()))
 		return metric, false
@@ -83,7 +83,7 @@ func (st *DbStorage) GetAllMetrics() map[string]utils.Metrics {
 		return rows, err
 	}
 
-	rows, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
+	rows, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
 	if err != nil {
 		logger.Log.Error("GetAllMetric", zap.String("error while select from DB", err.Error()))
 	}
@@ -127,7 +127,7 @@ func (st *DbStorage) SetMetric(key string, value interface{}, counter bool) {
 		}
 	}
 
-	_, err := backoff.Retry(context.Background(), operation, backoff.WithBackOff(utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)))
+	_, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
 	if err != nil {
 		logger.Log.Error("SetMetric", zap.String("error while insert in DB", err.Error()))
 		return
