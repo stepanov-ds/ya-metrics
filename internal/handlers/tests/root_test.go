@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -40,10 +41,10 @@ func TestRoot(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.fillStorage {
-				tt.st.SetMetric("test1", 1, true)
-				tt.st.SetMetric("test1", 4, true)
-				tt.st.SetMetric("test2", 1.1, false)
-				tt.st.SetMetric("test2", 2.2, false)
+				tt.st.SetMetric(context.Background(), "test1", 1, true)
+				tt.st.SetMetric(context.Background(), "test1", 4, true)
+				tt.st.SetMetric(context.Background(), "test2", 1.1, false)
+				tt.st.SetMetric(context.Background(), "test2", 2.2, false)
 			}
 
 			gin.SetMode(gin.TestMode)

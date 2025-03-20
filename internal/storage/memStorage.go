@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"sync"
 
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
@@ -28,7 +29,7 @@ func (s *MemStorage) GetMetric(key string) (utils.Metrics, bool) {
 	return metric, true
 }
 
-func (s *MemStorage) SetMetric(key string, value interface{}, counter bool) {
+func (s *MemStorage) SetMetric(ctx context.Context, key string, value interface{}, counter bool) {
 	oldMetricValue, found := s.storage.Load(key)
 	if found {
 		switch v := oldMetricValue.(type) {

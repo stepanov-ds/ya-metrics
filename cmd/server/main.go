@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stepanov-ds/ya-metrics/internal/config/server"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers/router"
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
@@ -21,11 +22,14 @@ func main() {
 
 	r := gin.Default()
 	var st storage.Storage
+	var p *pgxpool.Pool
+
+	ctx := context.Background()
 
 	if server.IsDB {
-		st = storage.NewDBStorage(storage.NewDBPool(context.Background(), *server.DatabaseDSN))
+		st = storage.NewDBStorage(ctx, storage.NewDBPool(ctx, *server.DatabaseDSN))
+		p = st.(*storage.DBStorage).Pool
 		defer st.(*storage.DBStorage).Pool.Close()
-		router.MainRoute(r, st, st.(*storage.DBStorage).Pool)
 	} else {
 		if *server.Restore {
 			st = server.RestoreStorage()
@@ -33,8 +37,8 @@ func main() {
 			st = storage.NewMemStorage(&sync.Map{})
 		}
 		go server.StoreInFile(st.(*storage.MemStorage))
-		router.MainRoute(r, st, nil)
 	}
+	router.Route(r, st, p)
 	logger.Log.Info("main", zap.String("working with DB", strconv.FormatBool(server.IsDB)))
 
 	if err := r.Run(*server.EndpointServer); err != nil {

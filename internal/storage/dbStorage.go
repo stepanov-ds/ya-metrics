@@ -2,10 +2,13 @@ package storage
 
 import (
 	"context"
-	"time"
+	"errors"
+	"fmt"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
@@ -25,7 +28,7 @@ func NewDBPool(ctx context.Context, dsn string) *pgxpool.Pool {
 	return pool
 }
 
-func NewDBStorage(p *pgxpool.Pool) *DBStorage {
+func NewDBStorage(ctx context.Context, p *pgxpool.Pool) *DBStorage {
 	query := `
 		CREATE TABLE IF NOT EXISTS public.metrics
 		(
@@ -38,11 +41,11 @@ func NewDBStorage(p *pgxpool.Pool) *DBStorage {
 	`
 
 	operation := func() (string, error) {
-		_, err := p.Exec(context.Background(), query)
-		return "", err
+		_, err := p.Exec(ctx, query)
+		return "", retriableHelper(err)
 	}
 
-	_, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
+	_, err := backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	if err != nil {
 		logger.Log.Error("NewDBStorage", zap.String("error while creating table in DB", err.Error()))
 	}
@@ -60,10 +63,10 @@ func (st *DBStorage) GetMetric(key string) (utils.Metrics, bool) {
 
 		var m utils.Metrics
 		err := row.Scan(&m.ID, &m.MType, &m.Delta, &m.Value)
-		return m, err
+		return m, retriableHelper(err)
 	}
 
-	metric, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
+	metric, err := backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
 	if err != nil {
 		logger.Log.Error("GetMetric", zap.String("error while select from DB", err.Error()))
 		return metric, false
@@ -76,14 +79,13 @@ func (st *DBStorage) GetAllMetrics() map[string]utils.Metrics {
 
 	operation := func() (pgx.Rows, error) {
 		rows, err := st.Pool.Query(context.Background(), query)
-		if err != nil {
-			return rows, err
+		if err==nil {
+			defer rows.Close()
 		}
-		defer rows.Close()
-		return rows, err
+		return rows, retriableHelper(err)
 	}
 
-	rows, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
+	rows, err := backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
 	if err != nil {
 		logger.Log.Error("GetAllMetric", zap.String("error while select from DB", err.Error()))
 	}
@@ -99,37 +101,93 @@ func (st *DBStorage) GetAllMetrics() map[string]utils.Metrics {
 	return metrics
 }
 
-func (st *DBStorage) SetMetric(key string, value interface{}, counter bool) {
-	query1 := `
+func (st *DBStorage) SetMetric(ctx context.Context, key string, value interface{}, counter bool) {
+	var query string
+	var metricType string
+	if counter {
+		query = `
 		INSERT INTO public.metrics ("ID", "MType", "Delta")
 		VALUES ($1, $2, $3)
 		ON CONFLICT ("ID") DO UPDATE SET
 			"MType" = EXCLUDED."MType",
 			"Delta" = COALESCE(public.metrics."Delta", 0) + EXCLUDED."Delta",
 			"Value" = NULL;
-	`
-	query2 := `
+		`
+		metricType = "counter"
+	} else {
+		query = `
 		INSERT INTO public.metrics ("ID", "MType", "Value")
 		VALUES ($1, $2, $3)
 		ON CONFLICT ("ID") DO UPDATE SET
 			"MType" = EXCLUDED."MType",
 			"Value" = EXCLUDED."Value",
 			"Delta" = Null;
-	`
+		`
+		metricType = "gauge"
+	}
+	
+	
 
 	operation := func() (string, error) {
-		if counter {
-			_, err := st.Pool.Exec(context.Background(), query1, key, "counter", value)
-			return "", err
-		} else {
-			_, err := st.Pool.Exec(context.Background(), query2, key, "gauge", value)
-			return "", err
-		}
+		tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
+    	if ok {
+        	_, err := tx.Exec(ctx, query, key, metricType, value)
+			return "", retriableHelper(err)
+    	}
+
+    	_, err := st.Pool.Exec(ctx, query, key, metricType, value)
+		return "", retriableHelper(err)
 	}
 
-	_, err := backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
+	_, err := backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	if err != nil {
 		logger.Log.Error("SetMetric", zap.String("error while insert in DB", err.Error()))
 		return
 	}
+}
+
+func (db *DBStorage) BeginTransaction(ctx context.Context) (context.Context, error) {
+    tx, err := db.Pool.Begin(ctx)
+    if err != nil {
+        return nil, err
+    }
+    ctx = context.WithValue(ctx, utils.Transaction, tx)
+    return ctx, nil
+}
+
+func (db *DBStorage) CommitTransaction(ctx context.Context) error {
+    tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
+    if !ok {
+        return fmt.Errorf("no transaction found in context")
+    }
+    if err := tx.Commit(ctx); err != nil {
+        return err
+    }
+    return nil
+}
+
+func (db *DBStorage) RollbackTransaction(ctx context.Context) error {
+    tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
+    if !ok {
+        return fmt.Errorf("no transaction found in context")
+    }
+    if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+        return err
+    }
+    return nil
+}
+
+func retriableHelper(err error) error {
+    var pgErr *pgconn.PgError
+    if err != nil {
+        if errors.As(err, &pgErr) {
+			if pgerrcode.IsConnectionException(pgErr.Code) || 
+			pgerrcode.IsTransactionRollback(pgErr.Code) || 
+			pgerrcode.IsInsufficientResources(pgErr.Code) {
+				return err
+			}
+			return backoff.Permanent(err)
+        }
+    }
+    return err
 }

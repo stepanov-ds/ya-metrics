@@ -56,7 +56,7 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 		return "", err
 	}
 
-	_, err = backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
+	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 
@@ -92,7 +92,7 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 		return "", err
 	}
 
-	_, err = backoff.RetryWithData( operation, utils.NewConstantIncreaseBackOff(time.Second, time.Second*2, 3))
+	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 

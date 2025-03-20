@@ -17,6 +17,7 @@ func Update(c *gin.Context, st storage.Storage) {
 	metricName := c.Param("metric_name")
 	metricValue := c.Param("value")
 	var m *utils.Metrics
+	ctx := c.Request.Context()
 
 	if metricType == "" || metricName == "" || metricValue == "" {
 		if c.Request.Body != nil {
@@ -67,14 +68,14 @@ func Update(c *gin.Context, st storage.Storage) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		st.SetMetric(metricName, v, strings.ToLower(metricType) == "counter")
+		st.SetMetric(ctx, metricName, v, strings.ToLower(metricType) == "counter")
 	} else if strings.ToLower(metricType) == "counter" {
 		v, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		st.SetMetric(metricName, v, strings.ToLower(metricType) == "counter")
+		st.SetMetric(ctx, metricName, v, strings.ToLower(metricType) == "counter")
 	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
