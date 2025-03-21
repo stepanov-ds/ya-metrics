@@ -146,8 +146,8 @@ func (st *DBStorage) SetMetric(ctx context.Context, key string, value interface{
 	}
 }
 
-func (db *DBStorage) BeginTransaction(ctx context.Context) (context.Context, error) {
-    tx, err := db.Pool.Begin(ctx)
+func (st *DBStorage) BeginTransaction(ctx context.Context) (context.Context, error) {
+    tx, err := st.Pool.Begin(ctx)
     if err != nil {
         return nil, err
     }
@@ -155,7 +155,7 @@ func (db *DBStorage) BeginTransaction(ctx context.Context) (context.Context, err
     return ctx, nil
 }
 
-func (db *DBStorage) CommitTransaction(ctx context.Context) error {
+func (st *DBStorage) CommitTransaction(ctx context.Context) error {
     tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
     if !ok {
         return fmt.Errorf("no transaction found in context")
@@ -166,7 +166,7 @@ func (db *DBStorage) CommitTransaction(ctx context.Context) error {
     return nil
 }
 
-func (db *DBStorage) RollbackTransaction(ctx context.Context) error {
+func (st *DBStorage) RollbackTransaction(ctx context.Context) error {
     tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
     if !ok {
         return fmt.Errorf("no transaction found in context")
