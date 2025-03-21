@@ -17,6 +17,7 @@ func Update(c *gin.Context, st storage.Storage) {
 	metricName := c.Param("metric_name")
 	metricValue := c.Param("value")
 	var m *utils.Metrics
+	ctx := c.Request.Context()
 
 	if metricType == "" || metricName == "" || metricValue == "" {
 		if c.Request.Body != nil {
@@ -34,11 +35,22 @@ func Update(c *gin.Context, st storage.Storage) {
 			metricName = m.ID
 			metricType = m.MType
 			if strings.ToLower(metricType) == "counter" {
-				metricValue = strconv.FormatInt(*m.Delta, 10)
+				if m.Delta != nil {
+					metricValue = strconv.FormatInt(*m.Delta, 10)
+				} else {
+					c.AbortWithStatus(http.StatusBadRequest)
+					return
+				}
 			} else if strings.ToLower(metricType) == "gauge" {
-				metricValue = strconv.FormatFloat(*m.Value, 'f', -1, 64)
+				if m.Value != nil {
+					metricValue = strconv.FormatFloat(*m.Value, 'f', -1, 64)
+				} else {
+					c.AbortWithStatus(http.StatusBadRequest)
+					return
+				}
 			} else {
 				c.AbortWithStatus(http.StatusBadRequest)
+				return
 			}
 		} else {
 			c.AbortWithStatus(http.StatusNotFound)
@@ -56,14 +68,14 @@ func Update(c *gin.Context, st storage.Storage) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		st.SetMetric(metricName, v, strings.ToLower(metricType) == "counter")
+		st.SetMetric(ctx, metricName, v, strings.ToLower(metricType) == "counter")
 	} else if strings.ToLower(metricType) == "counter" {
 		v, err := strconv.ParseInt(metricValue, 10, 64)
 		if err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		st.SetMetric(metricName, v, strings.ToLower(metricType) == "counter")
+		st.SetMetric(ctx, metricName, v, strings.ToLower(metricType) == "counter")
 	} else {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -72,7 +84,7 @@ func Update(c *gin.Context, st storage.Storage) {
 	c.Data(http.StatusOK, "", nil)
 }
 
-func UpdateWithJSON(c *gin.Context, st storage.Storage) *utils.Metrics { //где-то тут хуета
+func UpdateWithJSON(c *gin.Context, st storage.Storage) *utils.Metrics {
 	var m utils.Metrics
 	if err := c.ShouldBindJSON(&m); err != nil {
 		return &utils.Metrics{}
@@ -80,5 +92,3 @@ func UpdateWithJSON(c *gin.Context, st storage.Storage) *utils.Metrics { //гд�
 	return &m
 
 }
-
-

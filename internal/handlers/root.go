@@ -14,6 +14,6 @@ func Root(c *gin.Context, st storage.Storage) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Writer.Header().Add("Content-Type","text/html")
+	c.Writer.Header().Add("Content-Type", "text/html")
 	c.String(http.StatusOK, string(jsonData))
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/stepanov-ds/ya-metrics/internal/collector"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
@@ -35,25 +36,31 @@ func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) H
 	}
 }
 
-func (s *HTTPSender) SendMetric(name string, m utils.Metrics) (error) {
+func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, s.BaseURL+"/update", bytes.NewBuffer(jsonBytes))
+	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return err
 	}
 	req.Header = s.Headers
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		return err
+
+	operation := func() (string, error) {
+		resp, err := s.Client.Do(req)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+		return "", err
 	}
-	defer resp.Body.Close()
+
+	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 
-func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (error) {
+func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -68,7 +75,7 @@ func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (error) {
 	if err := gzWriter.Close(); err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, s.BaseURL+"/update", &buf)
+	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, &buf)
 	if err != nil {
 		return err
 	}
@@ -76,24 +83,29 @@ func (s *HTTPSender) SendMetricGzip(name string, m utils.Metrics) (error) {
 	req.Header.Add("Content-Encoding", "gzip")
 	req.Header.Add("Accept-Encoding", "gzip")
 
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		return err
+	operation := func() (string, error) {
+		resp, err := s.Client.Do(req)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+		return "", err
 	}
-	defer resp.Body.Close()
+
+	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 
 func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector, gzip bool) {
 	for {
-		for k, v := range collector.GetAllMetrics() {
+		for _, v := range collector.GetAllMetrics() {
 			if gzip {
-				err := s.SendMetricGzip(k, v)
+				err := s.SendMetricGzip(v, "/update")
 				if err != nil {
 					println(err.Error())
 				}
 			} else {
-				err := s.SendMetric(k, v)
+				err := s.SendMetric(v, "/update")
 				if err != nil {
 					println(err.Error())
 				}
@@ -103,6 +115,27 @@ func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector
 	}
 }
 
+func (s *HTTPSender) sendAll(interval time.Duration, collector *collector.Collector, gzip bool) {
+	for {
+		var metrics []utils.Metrics
+		for _, v := range collector.GetAllMetrics() {
+			metrics = append(metrics, v)
+		}
+		if gzip {
+			err := s.SendMetricGzip(metrics, "/updates")
+			if err != nil {
+				println(err.Error())
+			}
+		} else {
+			err := s.SendMetric(metrics, "/updates")
+			if err != nil {
+				println(err.Error())
+			}
+		}
+		time.Sleep(interval)
+	}
+}
+
 func (s *HTTPSender) Send(interval time.Duration, collector *collector.Collector, gzip bool) {
-	go s.send(interval, collector, gzip)
+	go s.sendAll(interval, collector, gzip)
 }
