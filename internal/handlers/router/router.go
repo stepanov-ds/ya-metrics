@@ -27,9 +27,9 @@ func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.POST("/update", func(ctx *gin.Context) {
 		handlers.Update(ctx, st)
 	})
-	// r.POST("/update/", func(ctx *gin.Context) {
-	// 	handlers.Update(ctx, st)
-	// })
+	r.POST("/update/", func(ctx *gin.Context) {
+		handlers.Update(ctx, st)
+	})
 	r.GET("/value/:metric_type/:metric_name", func(ctx *gin.Context) {
 		handlers.Value(ctx, st)
 	})
@@ -39,22 +39,22 @@ func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.POST("/value", func(ctx *gin.Context) {
 		handlers.Value(ctx, st)
 	})
-	// r.POST("/value/", func(ctx *gin.Context) {
-	// 	handlers.Value(ctx, st)
-	// })
+	r.POST("/value/", func(ctx *gin.Context) {
+		handlers.Value(ctx, st)
+	})
 	r.GET("/", func(ctx *gin.Context) {
 		handlers.Root(ctx, st)
 	})
 	r.GET("/ping", func(ctx *gin.Context) {
 		handlers.Ping(ctx, pool)
 	})
-	// r.GET("/ping/", func(ctx *gin.Context) {
-	// 	handlers.Ping(ctx, pool)
-	// })
+	r.GET("/ping/", func(ctx *gin.Context) {
+		handlers.Ping(ctx, pool)
+	})
 	r.POST("/updates", func(ctx *gin.Context) {
 		handlers.Updates(ctx, st)
 	})
-	// r.POST("/updates/", func(ctx *gin.Context) {
-	// 	handlers.Updates(ctx, st)
-	// })
+	r.POST("/updates/", func(ctx *gin.Context) {
+		handlers.Updates(ctx, st)
+	})
 }
