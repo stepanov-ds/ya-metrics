@@ -10,6 +10,7 @@ var (
 	EndpointAgent  = flag.String("a", "localhost:8080", "endpoint")
 	ReportInterval = flag.Int("r", 10, "report interaval")
 	PollInterval   = flag.Int("p", 2, "poll interval")
+	Key            = flag.String("k", "", "key")
 )
 
 func ConfigAgent() {
@@ -31,5 +32,9 @@ func ConfigAgent() {
 		if err == nil && i >= 0 {
 			PollInterval = &i
 		}
+	}
+	k, found := os.LookupEnv("KEY")
+	if found {
+		Key = &k
 	}
 }

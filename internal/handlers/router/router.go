@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stepanov-ds/ya-metrics/internal/config/server"
 	"github.com/stepanov-ds/ya-metrics/internal/handlers"
 	"github.com/stepanov-ds/ya-metrics/internal/middlewares"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
@@ -11,9 +12,11 @@ import (
 func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.Use(middlewares.Gzip())
 	r.Use(middlewares.WithLogging())
+	if *server.Key != "" {
+		r.Use(middlewares.HashCheck())
+	}
 
 	r.RedirectTrailingSlash = true
-
 
 	r.Any("/update/:metric_type/:metric_name/:value", func(ctx *gin.Context) {
 		handlers.Update(ctx, st)

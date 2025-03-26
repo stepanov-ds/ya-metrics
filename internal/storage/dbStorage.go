@@ -66,7 +66,7 @@ func (st *DBStorage) GetMetric(key string) (utils.Metrics, bool) {
 		return m, retriableHelper(err)
 	}
 
-	metric, err := backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
+	metric, err := backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	if err != nil {
 		logger.Log.Error("GetMetric", zap.String("error while select from DB", err.Error()))
 		return metric, false
@@ -79,13 +79,13 @@ func (st *DBStorage) GetAllMetrics() map[string]utils.Metrics {
 
 	operation := func() (pgx.Rows, error) {
 		rows, err := st.Pool.Query(context.Background(), query)
-		if err==nil {
+		if err == nil {
 			defer rows.Close()
 		}
 		return rows, retriableHelper(err)
 	}
 
-	rows, err := backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
+	rows, err := backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	if err != nil {
 		logger.Log.Error("GetAllMetric", zap.String("error while select from DB", err.Error()))
 	}
@@ -125,17 +125,15 @@ func (st *DBStorage) SetMetric(ctx context.Context, key string, value interface{
 		`
 		metricType = "gauge"
 	}
-	
-	
 
 	operation := func() (string, error) {
 		tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
-    	if ok {
-        	_, err := tx.Exec(ctx, query, key, metricType, value)
+		if ok {
+			_, err := tx.Exec(ctx, query, key, metricType, value)
 			return "", retriableHelper(err)
-    	}
+		}
 
-    	_, err := st.Pool.Exec(ctx, query, key, metricType, value)
+		_, err := st.Pool.Exec(ctx, query, key, metricType, value)
 		return "", retriableHelper(err)
 	}
 
@@ -147,47 +145,47 @@ func (st *DBStorage) SetMetric(ctx context.Context, key string, value interface{
 }
 
 func (st *DBStorage) BeginTransaction(ctx context.Context) (context.Context, error) {
-    tx, err := st.Pool.Begin(ctx)
-    if err != nil {
-        return nil, err
-    }
-    ctx = context.WithValue(ctx, utils.Transaction, tx)
-    return ctx, nil
+	tx, err := st.Pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ctx = context.WithValue(ctx, utils.Transaction, tx)
+	return ctx, nil
 }
 
 func (st *DBStorage) CommitTransaction(ctx context.Context) error {
-    tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
-    if !ok {
-        return fmt.Errorf("no transaction found in context")
-    }
-    if err := tx.Commit(ctx); err != nil {
-        return err
-    }
-    return nil
+	tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
+	if !ok {
+		return fmt.Errorf("no transaction found in context")
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (st *DBStorage) RollbackTransaction(ctx context.Context) error {
-    tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
-    if !ok {
-        return fmt.Errorf("no transaction found in context")
-    }
-    if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
-        return err
-    }
-    return nil
+	tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
+	if !ok {
+		return fmt.Errorf("no transaction found in context")
+	}
+	if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+		return err
+	}
+	return nil
 }
 
 func retriableHelper(err error) error {
-    var pgErr *pgconn.PgError
-    if err != nil {
-        if errors.As(err, &pgErr) {
-			if pgerrcode.IsConnectionException(pgErr.Code) || 
-			pgerrcode.IsTransactionRollback(pgErr.Code) || 
-			pgerrcode.IsInsufficientResources(pgErr.Code) {
+	var pgErr *pgconn.PgError
+	if err != nil {
+		if errors.As(err, &pgErr) {
+			if pgerrcode.IsConnectionException(pgErr.Code) ||
+				pgerrcode.IsTransactionRollback(pgErr.Code) ||
+				pgerrcode.IsInsufficientResources(pgErr.Code) {
 				return err
 			}
 			return backoff.Permanent(err)
-        }
-    }
-    return err
+		}
+	}
+	return err
 }

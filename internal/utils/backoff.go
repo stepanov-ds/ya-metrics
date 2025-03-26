@@ -36,7 +36,7 @@ func NewConstantIncreaseBackOff(initial time.Duration, inc time.Duration, retrie
 	}
 }
 
-//backoff strategy with retries intervals [1s, 3s, 5s]
+// backoff strategy with retries intervals [1s, 3s, 5s]
 func NewOneThreeFiveBackOff() *ConstantIncreaseBackOff {
 	return NewConstantIncreaseBackOff(time.Second, time.Second*2, 3)
 }

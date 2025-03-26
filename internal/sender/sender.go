@@ -9,6 +9,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/stepanov-ds/ya-metrics/internal/collector"
+	"github.com/stepanov-ds/ya-metrics/internal/config/agent"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
@@ -41,11 +42,20 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 	if err != nil {
 		return err
 	}
+
+	var hashString string
+	if *agent.Key != "" {
+		hashString = utils.CalculateHashWithKey(jsonBytes, *agent.Key)
+	}
+
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return err
 	}
 	req.Header = s.Headers
+	if *agent.Key != "" {
+		req.Header.Add("HashSHA256", hashString)
+	}
 
 	operation := func() (string, error) {
 		resp, err := s.Client.Do(req)
@@ -56,7 +66,7 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 		return "", err
 	}
 
-	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
+	_, err = backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 
@@ -64,6 +74,10 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
+	}
+	var hashString string
+	if *agent.Key != "" {
+		hashString = utils.CalculateHashWithKey(jsonBytes, *agent.Key)
 	}
 
 	var buf bytes.Buffer
@@ -79,9 +93,12 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	if err != nil {
 		return err
 	}
-	req.Header = s.Headers
+	req.Header = s.Headers.Clone()
 	req.Header.Add("Content-Encoding", "gzip")
 	req.Header.Add("Accept-Encoding", "gzip")
+	if *agent.Key != "" {
+		req.Header.Add("HashSHA256", hashString)
+	}
 
 	operation := func() (string, error) {
 		resp, err := s.Client.Do(req)
@@ -92,7 +109,7 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 		return "", err
 	}
 
-	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
+	_, err = backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 

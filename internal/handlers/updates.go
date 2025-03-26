@@ -19,7 +19,7 @@ func Updates(c *gin.Context, st storage.Storage) {
 	}
 
 	ctx := c.Request.Context()
-	
+
 	var isDB bool
 	if _, isDB := st.(*storage.DBStorage); isDB {
 		st.(*storage.DBStorage).BeginTransaction(ctx)
@@ -35,8 +35,8 @@ func Updates(c *gin.Context, st storage.Storage) {
 	}
 
 	if isDB {
-        st.(*storage.DBStorage).CommitTransaction(ctx)
-    }
+		st.(*storage.DBStorage).CommitTransaction(ctx)
+	}
 
 	c.Data(http.StatusOK, "", nil)
 }

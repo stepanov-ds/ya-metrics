@@ -11,8 +11,9 @@ var (
 	StoreInterval  = flag.Int("i", 300, "store interval")
 	FileStorePath  = flag.String("f", "filestore.out", "file store path")
 	Restore        = flag.Bool("r", true, "restore")
-	DatabaseDSN   = flag.String("d", "", "database_DSN")
+	DatabaseDSN    = flag.String("d", "", "database_DSN")
 	IsDB           = false
+	Key            = flag.String("k", "", "key")
 )
 
 func ConfigServer() {
@@ -46,5 +47,9 @@ func ConfigServer() {
 
 	if *DatabaseDSN != "" {
 		IsDB = true
+	}
+	k, found := os.LookupEnv("KEY")
+	if found {
+		Key = &k
 	}
 }
