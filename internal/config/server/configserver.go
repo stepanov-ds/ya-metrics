@@ -55,7 +55,6 @@ func ConfigServer() {
 	if found {
 		Key = &k
 	}
-	*Key = ""
 	logger.Log.Info("ConfigServer", 
 		zap.String("EndpointServer", *EndpointServer),
 		zap.Int("StoreInterval", *StoreInterval),

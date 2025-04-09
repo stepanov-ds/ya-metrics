@@ -14,6 +14,11 @@ import (
 
 func HashCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if *server.Key == "" {
+			c.Next()
+			return
+		}
+
 		body, err := c.GetRawData()
 		if err != nil {
 			c.JSON(400, gin.H{"error": "Failed to read body"})
