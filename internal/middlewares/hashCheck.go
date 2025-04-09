@@ -36,7 +36,7 @@ func HashCheck() gin.HandlerFunc {
 			logger.Log.Error("HashCheck", zap.String("error", "body hash does not match"),
 										  zap.String("hashString", hashString),
 										  zap.String("calculatedHashString", utils.CalculateHashWithKey(body, *server.Key)))
-			c.AbortWithStatus(http.StatusBadRequest)
+			c.AbortWithStatusJSON(http.StatusBadRequest, nil)
 			return
 		}
 		c.Next()

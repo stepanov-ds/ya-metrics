@@ -20,6 +20,7 @@ func main() {
 	logger.Initialize("info")
 	server.ConfigServer()
 
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	var st storage.Storage
 	var p *pgxpool.Pool
