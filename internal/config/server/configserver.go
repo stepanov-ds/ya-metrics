@@ -4,6 +4,9 @@ import (
 	"flag"
 	"os"
 	"strconv"
+
+	"github.com/stepanov-ds/ya-metrics/internal/logger"
+	"go.uber.org/zap"
 )
 
 var (
@@ -52,4 +55,13 @@ func ConfigServer() {
 	if found {
 		Key = &k
 	}
+	logger.Log.Info("ConfigServer", 
+		zap.String("EndpointServer", *EndpointServer),
+		zap.Int("StoreInterval", *StoreInterval),
+		zap.String("FileStorePath", *FileStorePath),
+		zap.Bool("Restore", *Restore),
+		zap.String("DatabaseDSN", *DatabaseDSN),
+		zap.Bool("IsDB", IsDB),
+		zap.String("Key", *Key),
+	)
 }

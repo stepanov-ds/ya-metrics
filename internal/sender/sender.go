@@ -128,7 +128,7 @@ func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector
 				}
 			}
 		}
-		time.Sleep(interval)
+		time.Sleep(interval) //поменять на time.ticker или time.after
 	}
 }
 
@@ -149,7 +149,7 @@ func (s *HTTPSender) sendAll(interval time.Duration, collector *collector.Collec
 				println(err.Error())
 			}
 		}
-		time.Sleep(interval)
+		time.Sleep(interval) //поменять на time.ticker или time.after
 	}
 }
 

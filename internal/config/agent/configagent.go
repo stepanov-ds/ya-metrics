@@ -37,4 +37,8 @@ func ConfigAgent() {
 	if found {
 		Key = &k
 	}
+	println("EndpointAgent=", *EndpointAgent)
+	println("ReportInterval=", *ReportInterval)
+	println("PollInterval=", *PollInterval)
+	println("Key=", *Key)
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/sender"
 )
 
-//metricstest --test.v --test.run=^TestIteration2[AB]*$ --source-path=. --agent-binary-path=cmd/agent/agent
+//TODO logger
 
 func main() {
 	agent.ConfigAgent()
