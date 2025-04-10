@@ -11,6 +11,7 @@ var (
 	ReportInterval = flag.Int("r", 10, "report interaval")
 	PollInterval   = flag.Int("p", 2, "poll interval")
 	Key            = flag.String("k", "", "key")
+	RateLimit      = flag.Int("l", 1, "rate limit")
 )
 
 func ConfigAgent() {
@@ -37,8 +38,16 @@ func ConfigAgent() {
 	if found {
 		Key = &k
 	}
+	rl, found := os.LookupEnv("RATE_LIMIT")
+	if found {
+		i, err := strconv.Atoi(rl)
+		if err == nil && i >= 0 {
+			RateLimit = &i
+		}
+	}
 	println("EndpointAgent=", *EndpointAgent)
 	println("ReportInterval=", *ReportInterval)
 	println("PollInterval=", *PollInterval)
 	println("Key=", *Key)
+	println("RateLimit=", *RateLimit)
 }

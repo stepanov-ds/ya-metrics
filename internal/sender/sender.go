@@ -25,15 +25,17 @@ type HTTPSender struct {
 	BaseURL string
 	Headers http.Header
 	Client  HTTPClient
+	sem chan struct{}
 }
 
-func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) HTTPSender {
+func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string, rateLimit int) HTTPSender {
 	return HTTPSender{
 		BaseURL: baseURL,
 		Headers: headers,
 		Client: &http.Client{
 			Timeout: timeout,
 		},
+		sem: make(chan struct{}, rateLimit),
 	}
 }
 
@@ -114,7 +116,11 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 }
 
 func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector, gzip bool) {
-	for {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		s.sem <- struct{}{}
 		for _, v := range collector.GetAllMetrics() {
 			if gzip {
 				err := s.SendMetricGzip(v, "/update")
@@ -128,12 +134,17 @@ func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector
 				}
 			}
 		}
-		time.Sleep(interval) //поменять на time.ticker или time.after
+		<- s.sem 
 	}
 }
 
 func (s *HTTPSender) sendAll(interval time.Duration, collector *collector.Collector, gzip bool) {
-	for {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		s.sem <- struct{}{}
+		
 		var metrics []utils.Metrics
 		for _, v := range collector.GetAllMetrics() {
 			metrics = append(metrics, v)
@@ -149,7 +160,7 @@ func (s *HTTPSender) sendAll(interval time.Duration, collector *collector.Collec
 				println(err.Error())
 			}
 		}
-		time.Sleep(interval) //поменять на time.ticker или time.after
+		<- s.sem 
 	}
 }
 
