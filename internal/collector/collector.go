@@ -4,9 +4,12 @@ import (
 	"math/rand"
 	"reflect"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
@@ -70,6 +73,22 @@ func (c *Collector) CollectMetrics() {
 	c.Metrics.Store("RandomValue", utils.NewMetrics("RandomValue", rand.Float64(), false))
 
 }
+
+func (c *Collector) CollectNewMetrics() {
+	v, _ := mem.VirtualMemory()
+    if v != nil {
+		c.Metrics.Store("TotalMemory", utils.NewMetrics("TotalMemory", float64(v.Total), false))
+		c.Metrics.Store("FreeMemory", utils.NewMetrics("FreeMemory", float64(v.Free), false))
+    }
+
+
+	cpuUtil, _ := cpu.Percent(0, true)
+	for i, v := range cpuUtil {
+		c.Metrics.Store("CPUutilization" + strconv.FormatInt(int64(i), 10), utils.NewMetrics("CPUutilization" + strconv.FormatInt(int64(i), 10), v, false))
+	}
+
+}
+
 func (c *Collector) GetAllMetrics() map[string]utils.Metrics {
 	result := make(map[string]utils.Metrics)
 
@@ -88,13 +107,16 @@ func (c *Collector) GetAllMetrics() map[string]utils.Metrics {
 	return result
 }
 
-func (c *Collector) collect(interval time.Duration) {
-	for {
-		c.CollectMetrics()
+func (c *Collector) collect(interval time.Duration, f func()) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		f()
 		time.Sleep(interval)
 	}
 }
 
-func (c *Collector) Collect(interval time.Duration) {
-	go c.collect(interval)
+func (c *Collector) Collect(interval time.Duration, f func()) {
+	go c.collect(interval, f)
 }

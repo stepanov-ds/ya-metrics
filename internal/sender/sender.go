@@ -9,6 +9,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/stepanov-ds/ya-metrics/internal/collector"
+	"github.com/stepanov-ds/ya-metrics/internal/config/agent"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 )
 
@@ -24,15 +25,17 @@ type HTTPSender struct {
 	BaseURL string
 	Headers http.Header
 	Client  HTTPClient
+	sem chan struct{}
 }
 
-func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string) HTTPSender {
+func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string, rateLimit int) HTTPSender {
 	return HTTPSender{
 		BaseURL: baseURL,
 		Headers: headers,
 		Client: &http.Client{
 			Timeout: timeout,
 		},
+		sem: make(chan struct{}, rateLimit),
 	}
 }
 
@@ -41,11 +44,20 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 	if err != nil {
 		return err
 	}
+
+	var hashString string
+	if *agent.Key != "" {
+		hashString = utils.CalculateHashWithKey(jsonBytes, *agent.Key)
+	}
+
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return err
 	}
 	req.Header = s.Headers
+	if *agent.Key != "" {
+		req.Header.Add("HashSHA256", hashString)
+	}
 
 	operation := func() (string, error) {
 		resp, err := s.Client.Do(req)
@@ -56,7 +68,7 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 		return "", err
 	}
 
-	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
+	_, err = backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 
@@ -64,6 +76,10 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
+	}
+	var hashString string
+	if *agent.Key != "" {
+		hashString = utils.CalculateHashWithKey(jsonBytes, *agent.Key)
 	}
 
 	var buf bytes.Buffer
@@ -79,9 +95,12 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	if err != nil {
 		return err
 	}
-	req.Header = s.Headers
+	req.Header = s.Headers.Clone()
 	req.Header.Add("Content-Encoding", "gzip")
 	req.Header.Add("Accept-Encoding", "gzip")
+	if *agent.Key != "" {
+		req.Header.Add("HashSHA256", hashString)
+	}
 
 	operation := func() (string, error) {
 		resp, err := s.Client.Do(req)
@@ -92,12 +111,16 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 		return "", err
 	}
 
-	_, err = backoff.RetryWithData( operation, utils.NewOneThreeFiveBackOff())
+	_, err = backoff.RetryWithData(operation, utils.NewOneThreeFiveBackOff())
 	return err
 }
 
 func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector, gzip bool) {
-	for {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		s.sem <- struct{}{}
 		for _, v := range collector.GetAllMetrics() {
 			if gzip {
 				err := s.SendMetricGzip(v, "/update")
@@ -111,12 +134,17 @@ func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector
 				}
 			}
 		}
-		time.Sleep(interval)
+		<- s.sem 
 	}
 }
 
 func (s *HTTPSender) sendAll(interval time.Duration, collector *collector.Collector, gzip bool) {
-	for {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		s.sem <- struct{}{}
+		
 		var metrics []utils.Metrics
 		for _, v := range collector.GetAllMetrics() {
 			metrics = append(metrics, v)
@@ -132,7 +160,7 @@ func (s *HTTPSender) sendAll(interval time.Duration, collector *collector.Collec
 				println(err.Error())
 			}
 		}
-		time.Sleep(interval)
+		<- s.sem 
 	}
 }
 
