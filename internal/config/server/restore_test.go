@@ -28,7 +28,7 @@ func TestRestore(t *testing.T) {
 	storeInFile(st)
 	restored := RestoreStorage()
 
-	for k, _ := range expectedMetrics {
+	for k := range expectedMetrics {
 		metricOrigin, ok := st.GetMetric(k)
 		assert.True(t, ok, "metric not found in origin storage")
 		metricRestored, ok := restored.GetMetric(k)
