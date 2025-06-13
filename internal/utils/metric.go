@@ -1,3 +1,6 @@
+// Package utils contains utility functions and shared types used across the application.
+//
+// This file defines the Metrics type and related methods for handling metric values.
 package utils
 
 import (
@@ -5,6 +8,9 @@ import (
 	"reflect"
 )
 
+// Metrics represents a single metric with name, type, and value.
+//
+// Used for both gauge and counter types.
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
@@ -12,6 +18,7 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
+// NewMetrics creates a new Metrics instance and sets its value based on type.
 func NewMetrics(name string, value interface{}, counter bool) Metrics {
 	m := Metrics{
 		ID: name,
@@ -20,6 +27,12 @@ func NewMetrics(name string, value interface{}, counter bool) Metrics {
 	return m
 }
 
+// Get returns the current value of the metric.
+//
+// Returns:
+// - int64 if it's a counter
+// - float64 if it's a gauge
+// - nil if type is unknown
 func (m *Metrics) Get() interface{} {
 	if m.MType == "counter" {
 		return *m.Delta
@@ -30,6 +43,11 @@ func (m *Metrics) Get() interface{} {
 	}
 }
 
+// Set updates the metric value according to its type.
+//
+// Supports various numeric types for both counter and gauge.
+// For counters: increments existing value or sets a new one.
+// For gauges: replaces current value.
 func (m *Metrics) Set(value interface{}, counter bool) {
 	v := reflect.ValueOf(value)
 
@@ -68,6 +86,12 @@ func (m *Metrics) Set(value interface{}, counter bool) {
 		}
 	}
 }
+
+// ConstructPath builds a URL path for updating this metric.
+//
+// Returns:
+// - URL path string
+// - true if successful, false if metric type is unknown
 func (m *Metrics) ConstructPath() (string, bool) {
 	if m.MType == "counter" {
 		return fmt.Sprintf("/update/counter/%s/%d", m.ID, *m.Delta), true

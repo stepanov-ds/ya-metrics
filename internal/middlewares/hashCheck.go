@@ -1,3 +1,7 @@
+// Package middlewares implements custom middleware functions for the Gin router.
+//
+// This file contains HashCheck middleware for validating request/response integrity
+// using SHA256 hash with a shared key.
 package middlewares
 
 import (
@@ -12,6 +16,18 @@ import (
 	"go.uber.org/zap"
 )
 
+// HashCheck returns a Gin middleware that verifies request/response integrity
+// using SHA256 hash when a signing key is configured.
+//
+// For incoming requests:
+// - Skips check if no key is set
+// - Computes hash of request body using shared key
+// - Compares with "HashSHA256" header
+// - Aborts with 400 if hash mismatch
+//
+// For outgoing responses:
+// - Calculates SHA256 hash of response body
+// - Sets "HashSHA256" header before sending response
 func HashCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if *server.Key == "" {
@@ -34,13 +50,12 @@ func HashCheck() gin.HandlerFunc {
 		}
 		c.Writer = loggedWriter
 
-
 		hashString := c.GetHeader("HashSHA256")
-		
+
 		if utils.CalculateHashWithKey(body, *server.Key) != hashString {
 			logger.Log.Error("HashCheck", zap.String("error", "body hash does not match"),
-										  zap.String("hashString", hashString),
-										  zap.String("calculatedHashString", utils.CalculateHashWithKey(body, *server.Key)))
+				zap.String("hashString", hashString),
+				zap.String("calculatedHashString", utils.CalculateHashWithKey(body, *server.Key)))
 			c.AbortWithStatusJSON(http.StatusBadRequest, nil)
 			return
 		}

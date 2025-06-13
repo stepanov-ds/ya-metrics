@@ -1,3 +1,6 @@
+// Package middlewares implements custom middleware functions for the Gin router.
+//
+// This file contains WithLogging middleware for logging HTTP requests and responses.
 package middlewares
 
 import (
@@ -10,6 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
+// WithLogging returns a Gin middleware that logs incoming requests and outgoing responses.
+//
+// Logs include:
+// - Request URI, method, duration, and body
+// - Response status, size, and body
 func WithLogging() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -49,16 +57,19 @@ func WithLogging() gin.HandlerFunc {
 	}
 }
 
+// LoggedResponseWriter wraps gin.ResponseWriter to capture written response body.
 type LoggedResponseWriter struct {
 	gin.ResponseWriter
 	Body *bytes.Buffer
 }
 
+// Write writes the response data to both the internal buffer and the original writer.
 func (w *LoggedResponseWriter) Write(b []byte) (int, error) {
 	w.Body.Write(b)
 	return w.ResponseWriter.Write(b)
 }
 
+// WriteHeader sends an HTTP response header with the given status code.
 func (w *LoggedResponseWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }

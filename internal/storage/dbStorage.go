@@ -1,3 +1,8 @@
+// Package storage provides interfaces and implementations for storing and retrieving metrics.
+//
+// Supports:
+// - In-memory storage (not shown here)
+// - PostgreSQL-based persistent storage (DBStorage)
 package storage
 
 import (
@@ -15,10 +20,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// DBStorage is a PostgreSQL-backed implementation of the Storage interface.
 type DBStorage struct {
 	Pool *pgxpool.Pool
 }
 
+// NewDBPool creates a new connection pool to PostgreSQL.
+//
+// Returns nil if connection fails.
 func NewDBPool(ctx context.Context, dsn string) *pgxpool.Pool {
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -28,6 +37,9 @@ func NewDBPool(ctx context.Context, dsn string) *pgxpool.Pool {
 	return pool
 }
 
+// NewDBStorage initializes a DBStorage instance and ensures the metrics table exists.
+//
+// Creates the metrics table if not exists using idempotent query.
 func NewDBStorage(ctx context.Context, p *pgxpool.Pool) *DBStorage {
 	query := `
 		CREATE TABLE IF NOT EXISTS public.metrics
@@ -55,6 +67,9 @@ func NewDBStorage(ctx context.Context, p *pgxpool.Pool) *DBStorage {
 	}
 }
 
+// GetMetric retrieves a single metric by key from the database.
+//
+// Returns the metric and true if found, empty metric and false otherwise.
 func (st *DBStorage) GetMetric(key string) (utils.Metrics, bool) {
 	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics WHERE "ID" = $1;`
 
@@ -74,6 +89,9 @@ func (st *DBStorage) GetMetric(key string) (utils.Metrics, bool) {
 	return metric, true
 }
 
+// GetAllMetrics retrieves all metrics stored in the database.
+//
+// Returns a map of metric names to their values.
 func (st *DBStorage) GetAllMetrics() map[string]utils.Metrics {
 	query := `SELECT "ID", "MType", "Delta", "Value" FROM public.metrics;`
 
@@ -101,6 +119,9 @@ func (st *DBStorage) GetAllMetrics() map[string]utils.Metrics {
 	return metrics
 }
 
+// SetMetric stores or updates a metric in the database.
+//
+// Supports both gauge and counter types and can operate inside a transaction.
 func (st *DBStorage) SetMetric(ctx context.Context, key string, value interface{}, counter bool) {
 	var query string
 	var metricType string
@@ -144,6 +165,9 @@ func (st *DBStorage) SetMetric(ctx context.Context, key string, value interface{
 	}
 }
 
+// BeginTransaction starts a new database transaction and stores it in the context.
+//
+// Returns updated context with transaction or error if transaction failed.
 func (st *DBStorage) BeginTransaction(ctx context.Context) (context.Context, error) {
 	tx, err := st.Pool.Begin(ctx)
 	if err != nil {
@@ -153,6 +177,9 @@ func (st *DBStorage) BeginTransaction(ctx context.Context) (context.Context, err
 	return ctx, nil
 }
 
+// CommitTransaction commits a previously started transaction.
+//
+// Returns error if no transaction is found in context or commit fails.
 func (st *DBStorage) CommitTransaction(ctx context.Context) error {
 	tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
 	if !ok {
@@ -164,6 +191,9 @@ func (st *DBStorage) CommitTransaction(ctx context.Context) error {
 	return nil
 }
 
+// RollbackTransaction rolls back a previously started transaction.
+//
+// Returns error if no transaction is found in context.
 func (st *DBStorage) RollbackTransaction(ctx context.Context) error {
 	tx, ok := ctx.Value(utils.Transaction).(pgx.Tx)
 	if !ok {
@@ -175,6 +205,9 @@ func (st *DBStorage) RollbackTransaction(ctx context.Context) error {
 	return nil
 }
 
+// retriableHelper determines whether an error should trigger a retry.
+//
+// Returns permanent error if error is unrecoverable.
 func retriableHelper(err error) error {
 	var pgErr *pgconn.PgError
 	if err != nil {
