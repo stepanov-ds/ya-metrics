@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/internal/handlers"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
@@ -130,10 +129,10 @@ func TestUpdate(t *testing.T) {
 
 			r.RedirectTrailingSlash = false
 			r.Any("/update/:metric_type/:metric_name/:value/", func(c *gin.Context) {
-				handlers.Update(c, tt.args.storage)
+				Update(c, tt.args.storage)
 			})
 			r.Any("/update/:metric_type/:metric_name/:value", func(c *gin.Context) {
-				handlers.Update(c, tt.args.storage)
+				Update(c, tt.args.storage)
 			})
 			r.HandleContext(ctx)
 

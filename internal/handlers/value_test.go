@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/internal/handlers"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -132,10 +131,10 @@ func TestValue(t *testing.T) {
 
 			r.RedirectTrailingSlash = false
 			r.GET("/value/:metric_type/:metric_name", func(ctx *gin.Context) {
-				handlers.Value(ctx, tt.st)
+				Value(ctx, tt.st)
 			})
 			r.GET("/value/:metric_type/:metric_name/", func(ctx *gin.Context) {
-				handlers.Value(ctx, tt.st)
+				Value(ctx, tt.st)
 			})
 			r.HandleContext(ctx)
 			// print("_______________________________________BODY___________________")

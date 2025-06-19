@@ -12,9 +12,8 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"go.uber.org/zap"
+	// _ "net/http/pprof"
 )
-
-//metricstest -test.v -test.run=^TestIteration3[AB]$ -binary-path=cmd/server/server
 
 func main() {
 	logger.Initialize("info")

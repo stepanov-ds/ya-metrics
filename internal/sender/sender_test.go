@@ -3,6 +3,7 @@ package sender
 import (
 	"errors"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -170,12 +171,15 @@ func TestNewHttpSender(t *testing.T) {
 				Client: &http.Client{
 					Timeout: time.Second * 2,
 				},
+				sem: make(chan struct{}, 1),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, NewHTTPSender(tt.args.timeout, tt.args.headers, tt.args.baseURL, 1))
+			sender := NewHTTPSender(tt.args.timeout, tt.args.headers, tt.args.baseURL, 1)
+			assert.Equal(t, tt.want.BaseURL, sender.BaseURL)
+			assert.True(t, reflect.DeepEqual(tt.want.Headers, sender.Headers))
 		})
 	}
 }

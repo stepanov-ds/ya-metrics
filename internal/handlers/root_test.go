@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/internal/handlers"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,7 +54,7 @@ func TestRoot(t *testing.T) {
 
 			r.RedirectTrailingSlash = false
 			r.GET("/", func(c *gin.Context) {
-				handlers.Root(c, tt.st)
+				Root(c, tt.st)
 			})
 			r.HandleContext(ctx)
 			assert.Equal(t, tt.expectedStatus, rr.Code)

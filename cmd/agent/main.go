@@ -19,11 +19,11 @@ func main() {
 	sender := sender.NewHTTPSender(time.Second*10, headers, "http://"+*agent.EndpointAgent, *agent.RateLimit)
 
 	collector1 := collector.NewCollector(&sync.Map{})
-	collector1.Collect(time.Duration(*agent.PollInterval) * time.Second, collector1.CollectMetrics)
+	collector1.Collect(time.Duration(*agent.PollInterval)*time.Second, collector1.CollectMetrics)
 	sender.Send(time.Duration(*agent.ReportInterval)*time.Second, collector1, true)
 
 	collector2 := collector.NewCollector(&sync.Map{})
-	collector2.Collect(time.Duration(*agent.PollInterval) * time.Second, collector2.CollectNewMetrics)
+	collector2.Collect(time.Duration(*agent.PollInterval)*time.Second, collector2.CollectNewMetrics)
 	sender.Send(time.Duration(*agent.ReportInterval)*time.Second, collector2, true)
 
 	select {}

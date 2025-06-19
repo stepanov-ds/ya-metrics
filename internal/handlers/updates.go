@@ -1,3 +1,9 @@
+// Package handlers implements HTTP handlers for the metrics server.
+//
+// It includes:
+// - Metric update and retrieval handlers
+// - Health check and ping endpoints
+// - Root endpoint to list all metrics
 package handlers
 
 import (
@@ -10,8 +16,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// Updates handles bulk metric updates via JSON POST request.
+//
+// Expects a JSON array of utils.Metrics objects in the request body.
+// Processes each metric and stores it using the provided storage.
+// Supports transaction handling when using DBStorage.
 func Updates(c *gin.Context, st storage.Storage) {
 	var m []utils.Metrics
+	// m := make([]utils.Metrics, 0, 30)
 	if err := c.ShouldBindBodyWithJSON(&m); err != nil {
 		logger.Log.Error("Updates", zap.String("error while unmarshal body", err.Error()))
 		c.AbortWithStatus(http.StatusBadRequest)

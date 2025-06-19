@@ -1,3 +1,8 @@
+// Package server implements logic for restoring and persisting metrics storage.
+//
+// It supports:
+// - Loading metrics from a file on startup
+// - Periodically saving current metrics to a file
 package server
 
 import (
@@ -13,6 +18,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// RestoreStorage loads metrics from the storage file (if exists) and returns an initialized MemStorage.
+//
+// If the file is missing or contains invalid data, it returns a new empty storage.
 func RestoreStorage() *storage.MemStorage {
 	content, err := os.ReadFile(*FileStorePath)
 	if err != nil {
@@ -33,6 +41,9 @@ func RestoreStorage() *storage.MemStorage {
 	return storage.NewMemStorage(&syncMap)
 }
 
+// storeInFile saves all current metrics from MemStorage to the storage file in JSON format.
+//
+// If marshaling or writing fails, logs an error using zap.Logger.
 func storeInFile(s *storage.MemStorage) {
 	jsonData, err := json.Marshal(s.GetAllMetrics())
 	if err != nil {
@@ -43,6 +54,10 @@ func storeInFile(s *storage.MemStorage) {
 		logger.Log.Error("storeInFile", zap.String("error while writing file", err.Error()))
 	}
 }
+
+// StoreInFile starts a background loop that periodically saves metrics to disk.
+//
+// Interval is defined by StoreInterval (in seconds).
 func StoreInFile(s *storage.MemStorage) {
 	for {
 		time.Sleep(time.Second * time.Duration(*StoreInterval))

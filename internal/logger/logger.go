@@ -1,25 +1,29 @@
+// Package logger provides a global zap.Logger instance for structured logging.
+//
+// It allows initialization with custom log level and is used across the application
+// to log events, errors, and operational information.
 package logger
 
 import "go.uber.org/zap"
 
+// Log is a global logger instance initialized during application startup.
 var Log *zap.Logger
 
+// Initialize configures and builds a new zap.Logger with the specified log level.
+//
+// Uses zap.NewProductionConfig() as base configuration.
+// Returns error if level parsing or logger creation fails.
 func Initialize(level string) error {
-	// преобразуем текстовый уровень логирования в zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
 		return err
 	}
-	// создаём новую конфигурацию логера
 	cfg := zap.NewProductionConfig()
-	// устанавливаем уровень
 	cfg.Level = lvl
-	// создаём логер на основе конфигурации
 	zl, err := cfg.Build()
 	if err != nil {
 		return err
 	}
-	// устанавливаем синглтон
 	Log = zl
 	return nil
 }
