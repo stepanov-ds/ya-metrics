@@ -13,9 +13,9 @@ import (
 
 type MockClient struct {
 	http.Client
-	BaseURL string
 	Headers http.Header
 	DoFunc  func(*http.Request) (*http.Response, error)
+	BaseURL string
 }
 
 func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
@@ -27,10 +27,10 @@ func TestHttpSender_SendMetric(t *testing.T) {
 		metric utils.Metrics
 	}
 	tests := []struct {
-		name    string
 		args    args
 		want    *http.Request
 		wantErr error
+		name    string
 	}{
 		{},
 		// TODO: Add test cases.
@@ -144,14 +144,14 @@ func TestHttpSender_SendMetric(t *testing.T) {
 
 func TestNewHttpSender(t *testing.T) {
 	type args struct {
-		timeout time.Duration
 		headers http.Header
 		baseURL string
+		timeout time.Duration
 	}
 	tests := []struct {
 		name string
-		args args
 		want HTTPSender
+		args args
 	}{
 		// TODO: Add test cases.
 		{

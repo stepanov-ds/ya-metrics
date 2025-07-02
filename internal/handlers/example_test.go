@@ -64,17 +64,17 @@ func init() {
 // ExampleUpdate demonstrates how to update a gauge metric via JSON.
 func ExampleUpdate() {
 	client := &http.Client{}
-	body := 
-	`
+	body :=
+		`
 	{
     	"id": "RandomValue",
     	"type": "gauge",
     	"value": 124.2
 	}
 	`
-    req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
 	// println(err)
-    req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -83,24 +83,24 @@ func ExampleUpdate() {
 	resp.Body.Close()
 	fmt.Println(resp.Status)
 
-    // Output:
-    // 200 OK
+	// Output:
+	// 200 OK
 }
 
 // ExampleRoot demonstrates how to get all metrics
 func ExampleRoot() {
 	client := &http.Client{}
-	body := 
-	`
+	body :=
+		`
 	{
     	"id": "RandomValue",
     	"type": "gauge",
     	"value": 124.2
 	}
 	`
-    req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
 	// println(err)
-    req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -118,25 +118,25 @@ func ExampleRoot() {
 
 	fmt.Println(string(respBody))
 
-    // Output:
-    // {"RandomValue":{"id":"RandomValue","type":"gauge","value":124.2}}
-	
+	// Output:
+	// {"RandomValue":{"value":124.2,"id":"RandomValue","type":"gauge"}}
+
 }
 
 // ExampleValue demonstrates how to get distinct metric
 func ExampleValue() {
 	client := &http.Client{}
-	body := 
-	`
+	body :=
+		`
 	{
     	"id": "RandomValue",
     	"type": "gauge",
     	"value": 124.2
 	}
 	`
-    req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
 	// println(err)
-    req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -154,7 +154,7 @@ func ExampleValue() {
 
 	fmt.Println(string(respBody))
 
-    // Output:
-    // 124.2
-	
+	// Output:
+	// 124.2
+
 }

@@ -12,8 +12,8 @@ import (
 
 func TestCollector_CollectMetrics(t *testing.T) {
 	tests := []struct {
-		name      string
 		c         *Collector
+		name      string
 		pollCount int64
 	}{
 		// TODO: Add test cases.

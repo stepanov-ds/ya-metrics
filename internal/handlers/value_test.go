@@ -15,11 +15,11 @@ import (
 func TestValue(t *testing.T) {
 	tests := []struct {
 		st             storage.Storage
-		name           string
-		fillStorage    bool
-		expectedStatus int
-		expectedBody   string
 		request        *http.Request
+		name           string
+		expectedBody   string
+		expectedStatus int
+		fillStorage    bool
 	}{
 		// TODO: Add test cases.
 		{

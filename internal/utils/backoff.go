@@ -24,16 +24,18 @@ type ConstantIncreaseBackOff struct {
 // Reset sets the backoff strategy to its initial state.
 func (b *ConstantIncreaseBackOff) Reset() {
 	b.currentInterval = b.initialInterval
+	b.retry = 0
 }
 
 // NextBackOff returns the interval to wait before the next retry.
 //
 // Returns backoff.Stop if maximum retries reached.
 func (b *ConstantIncreaseBackOff) NextBackOff() time.Duration {
+	interval := b.currentInterval
 	b.retry = b.retry + 1
-	if b.retry < b.maxRetries {
+	if b.retry <= b.maxRetries {
 		b.currentInterval = b.currentInterval + b.increase
-		return b.currentInterval
+		return interval
 	}
 	return backoff.Stop
 }

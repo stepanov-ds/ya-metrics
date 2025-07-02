@@ -33,15 +33,16 @@ func Updates(c *gin.Context, st storage.Storage) {
 	ctx := c.Request.Context()
 
 	var isDB bool
-	if _, isDB := st.(*storage.DBStorage); isDB {
+	if _, isDB = st.(*storage.DBStorage); isDB {
 		st.(*storage.DBStorage).BeginTransaction(ctx)
 		defer st.(*storage.DBStorage).RollbackTransaction(ctx)
 	}
 
 	for _, item := range m {
-		if item.MType == "counter" {
+		switch item.MType {
+		case "counter":
 			st.SetMetric(ctx, item.ID, item.Delta, true)
-		} else if item.MType == "gauge" {
+		case "gauge":
 			st.SetMetric(ctx, item.ID, item.Value, false)
 		}
 	}

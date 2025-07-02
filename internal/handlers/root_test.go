@@ -14,12 +14,12 @@ import (
 
 func TestRoot(t *testing.T) {
 	tests := []struct {
-		name           string
 		st             storage.Storage
-		expectedStatus int
+		rr             *http.Request
+		name           string
 		expectedBody   string
 		fillStorage    bool
-		rr             *http.Request
+		expectedStatus int
 	}{
 		// TODO: Add test cases.
 		{
@@ -33,7 +33,7 @@ func TestRoot(t *testing.T) {
 			name:           "Positive #2 Get storage with rewrited Counter and rewrited Gauge",
 			st:             storage.NewMemStorage(&sync.Map{}),
 			expectedStatus: http.StatusOK,
-			expectedBody:   "{\"test1\":{\"id\":\"test1\",\"type\":\"counter\",\"delta\":5},\"test2\":{\"id\":\"test2\",\"type\":\"gauge\",\"value\":2.2}}",
+			expectedBody:   "{\"test1\":{\"delta\":5,\"id\":\"test1\",\"type\":\"counter\"},\"test2\":{\"value\":2.2,\"id\":\"test2\",\"type\":\"gauge\"}}",
 			fillStorage:    true,
 		},
 	}
