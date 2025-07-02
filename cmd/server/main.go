@@ -28,8 +28,8 @@ func main() {
 
 	if server.IsDB {
 		st = storage.NewDBStorage(ctx, storage.NewDBPool(ctx, *server.DatabaseDSN))
-		p = st.(*storage.DBStorage).Pool
-		defer st.(*storage.DBStorage).Pool.Close()
+		p = st.(*storage.DBStorage).Pool.(*pgxpool.Pool)
+		defer st.(*storage.DBStorage).Pool.(*pgxpool.Pool).Close()
 	} else {
 		if *server.Restore {
 			st = server.RestoreStorage()

@@ -31,10 +31,10 @@ type HTTPClient interface {
 
 // HTTPSender implements metric sending via HTTP requests.
 type HTTPSender struct {
-	BaseURL string
 	Headers http.Header
 	Client  HTTPClient
 	sem     chan struct{}
+	BaseURL string
 }
 
 // NewHTTPSender creates and returns a new HTTPSender instance.
@@ -79,7 +79,8 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 	}
 
 	operation := func() (string, error) {
-		resp, err := s.Client.Do(req)
+		var resp *http.Response
+		resp, err = s.Client.Do(req)
 		if err != nil {
 			return "", err
 		}
@@ -108,10 +109,10 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	var buf bytes.Buffer
 	gzWriter := gzip.NewWriter(&buf)
 
-	if _, err := gzWriter.Write(jsonBytes); err != nil {
+	if _, err = gzWriter.Write(jsonBytes); err != nil {
 		return err
 	}
-	if err := gzWriter.Close(); err != nil {
+	if err = gzWriter.Close(); err != nil {
 		return err
 	}
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, &buf)
@@ -126,7 +127,8 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	}
 
 	operation := func() (string, error) {
-		resp, err := s.Client.Do(req)
+		var resp *http.Response
+		resp, err = s.Client.Do(req)
 		if err != nil {
 			return "", err
 		}

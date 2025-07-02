@@ -22,8 +22,8 @@ func TestUpdate(t *testing.T) {
 		name           string
 		args           args
 		metricName     string
-		expectedStatus int
 		expectedMetric utils.Metrics
+		expectedStatus int
 	}{
 		// TODO: Add test cases.
 		{

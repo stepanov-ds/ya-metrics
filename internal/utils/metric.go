@@ -12,10 +12,10 @@ import (
 //
 // Used for both gauge and counter types.
 type Metrics struct {
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
 // NewMetrics creates a new Metrics instance and sets its value based on type.
@@ -34,11 +34,12 @@ func NewMetrics(name string, value interface{}, counter bool) Metrics {
 // - float64 if it's a gauge
 // - nil if type is unknown
 func (m *Metrics) Get() interface{} {
-	if m.MType == "counter" {
+	switch m.MType {
+	case "counter":
 		return *m.Delta
-	} else if m.MType == "gauge" {
+	case "gauge":
 		return *m.Value
-	} else {
+	default:
 		return nil
 	}
 }
@@ -93,11 +94,12 @@ func (m *Metrics) Set(value interface{}, counter bool) {
 // - URL path string
 // - true if successful, false if metric type is unknown
 func (m *Metrics) ConstructPath() (string, bool) {
-	if m.MType == "counter" {
-		return fmt.Sprintf("/update/counter/%s/%d", m.ID, *m.Delta), true
-	} else if m.MType == "gauge" {
-		return fmt.Sprintf("/update/gauge/%s/%f", m.ID, *m.Value), true
-	} else {
+	switch m.MType {
+	case "counter":
+		return fmt.Sprintf("/update/counter/%s/%v", m.ID, *m.Delta), true
+	case "gauge":
+		return fmt.Sprintf("/update/gauge/%s/%v", m.ID, *m.Value), true
+	default:
 		return "", false
 	}
 }

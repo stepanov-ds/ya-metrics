@@ -27,7 +27,7 @@ type Collector struct {
 
 // NewCollector creates a new instance of Collector.
 //
-//   m - pointer to a sync.Map where metrics will be stored
+//	m - pointer to a sync.Map where metrics will be stored
 func NewCollector(m *sync.Map) *Collector {
 	return &Collector{
 		Metrics: m,
