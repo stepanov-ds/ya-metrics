@@ -7,6 +7,9 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,12 +26,21 @@ import (
 // Supports transaction handling when using DBStorage.
 func Updates(c *gin.Context, st storage.Storage) {
 	var m []utils.Metrics
-	// m := make([]utils.Metrics, 0, 30)
-	if err := c.ShouldBindBodyWithJSON(&m); err != nil {
-		logger.Log.Error("Updates", zap.String("error while unmarshal body", err.Error()))
+
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
-		return
 	}
+	if err := json.Unmarshal(body, &m); err != nil {
+		logger.Log.Error("Updates", zap.String("error while unmarshal body", err.Error()))
+	}
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+	// m := make([]utils.Metrics, 0, 30)
+	// if err := c.ShouldBindBodyWithJSON(&m); err != nil {
+	// 	logger.Log.Error("Updates", zap.String("error while unmarshal body", err.Error()))
+	// 	c.AbortWithStatus(http.StatusBadRequest)
+	// 	return
+	// }
 
 	ctx := c.Request.Context()
 

@@ -75,6 +75,10 @@ func Update(c *gin.Context, st storage.Storage) {
 		c.AbortWithStatus(http.StatusMethodNotAllowed)
 		return
 	}
+	if metricValue == "" {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 	if strings.ToLower(metricType) == "gauge" {
 		v, err := strconv.ParseFloat(metricValue, 64)
 		if err != nil {

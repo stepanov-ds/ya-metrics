@@ -51,6 +51,7 @@ func TestConfigServer_DefaultValues(t *testing.T) {
 	unsetEnv(t, "RESTORE")
 	unsetEnv(t, "DATABASE_DSN")
 	unsetEnv(t, "KEY")
+	unsetEnv(t, "CRYPTO_KEY")
 
 	os.Args = []string{"cmd"}
 
@@ -72,6 +73,7 @@ func TestConfigServer_EnvOverridesDefault(t *testing.T) {
 	setEnv(t, "RESTORE", "false")
 	setEnv(t, "DATABASE_DSN", "postgres://...")
 	setEnv(t, "KEY", "secret_key")
+	setEnv(t, "CRYPTO_KEY", "secret_key")
 
 	os.Args = []string{"cmd"}
 
@@ -94,6 +96,7 @@ func TestConfigServer_EnvOverridesFlag(t *testing.T) {
 	setEnv(t, "RESTORE", "false")
 	setEnv(t, "DATABASE_DSN", "env_postgres://...")
 	setEnv(t, "KEY", "env_secret")
+	setEnv(t, "CRYPTO_KEY", "secret_key")
 
 	os.Args = []string{
 		"cmd",
@@ -124,6 +127,7 @@ func TestConfigServer_FlagOverridesDefault(t *testing.T) {
 	unsetEnv(t, "RESTORE")
 	unsetEnv(t, "DATABASE_DSN")
 	unsetEnv(t, "KEY")
+	unsetEnv(t, "CRYPTO_KEY")
 
 	os.Args = []string{
 		"cmd",
@@ -155,4 +159,26 @@ func TestConfigServer_EmptyDatabaseDSN(t *testing.T) {
 
 	assert.Empty(t, *DatabaseDSN)
 	assert.False(t, IsDB)
+}
+func TestConfigServer_Config(t *testing.T) {
+	resetFlags()
+	unsetEnv(t, "ADDRESS")
+	unsetEnv(t, "STORE_INTERVAL")
+	unsetEnv(t, "FILE_STORAGE_PATH")
+	unsetEnv(t, "RESTORE")
+	unsetEnv(t, "DATABASE_DSN")
+	unsetEnv(t, "KEY")
+	unsetEnv(t, "CRYPTO_KEY")
+
+	os.Args = []string{"cmd", "-config=../../../configServer.json"}
+
+	ConfigServer()
+
+	assert.Equal(t, "localhost:8080", *EndpointServer)
+	assert.Equal(t, 1, *StoreInterval)
+	assert.Equal(t, "filestore.out", *FileStorePath)
+	assert.True(t, *Restore)
+	assert.Empty(t, *DatabaseDSN)
+	assert.False(t, IsDB)
+	assert.Empty(t, *Key)
 }
