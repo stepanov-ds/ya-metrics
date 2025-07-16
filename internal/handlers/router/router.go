@@ -10,6 +10,7 @@ import (
 	// "net/http"
 
 	"crypto/rsa"
+	"net/http"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/pprof"
@@ -97,4 +98,7 @@ func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool, privateKey *rs
 
 	// Register pprof profiling routes under /debug/pprof/*
 	pprof.Register(r)
+	r.NoRoute(func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusNotFound)
+	})
 }
