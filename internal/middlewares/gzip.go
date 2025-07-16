@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 // var gzipPool = sync.Pool{
 // 	New: func() any {
 // 		// var buf bytes.Buffer

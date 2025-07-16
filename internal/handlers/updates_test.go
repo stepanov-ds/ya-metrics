@@ -35,11 +35,11 @@ func TestUpdates(t *testing.T) {
 		storage storage.Storage
 	}
 	tests := []struct {
-		name            string
 		args            args
+		expectedMetrics map[string]utils.Metrics
+		name            string
 		metricName      string
 		expectedStatus  int
-		expectedMetrics map[string]utils.Metrics
 	}{
 		{
 			name: "Positive #1",

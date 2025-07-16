@@ -14,20 +14,20 @@ import (
 
 var (
 	// EndpointAgent holds the server address in the format "host:port".
-    // Can be set via flag "-a" or env var "ADDRESS".
-	EndpointAgent  = flag.String("a", "localhost:8080", "endpoint")
+	// Can be set via flag "-a" or env var "ADDRESS".
+	EndpointAgent = flag.String("a", "localhost:8080", "endpoint")
 	// ReportInterval defines how often (in seconds) the agent sends metrics to the server.
-    // Can be set via flag "-r" or env var "REPORT_INTERVAL".
+	// Can be set via flag "-r" or env var "REPORT_INTERVAL".
 	ReportInterval = flag.Int("r", 10, "report interaval")
 	// PollInterval defines how often (in seconds) the agent collects new metrics locally.
-    // Can be set via flag "-p" or env var "POLL_INTERVAL".
-	PollInterval   = flag.Int("p", 2, "poll interval")
+	// Can be set via flag "-p" or env var "POLL_INTERVAL".
+	PollInterval = flag.Int("p", 2, "poll interval")
 	// Key holds an optional signing key used to calculate hash of the metric payload.
-    // Can be set via flag "-k" or env var "KEY".
-	Key            = flag.String("k", "", "key")
+	// Can be set via flag "-k" or env var "KEY".
+	Key = flag.String("k", "", "key")
 	// RateLimit defines maximum number of concurrent requests to the server.
-    // Can be set via flag "-l" or env var "RATE_LIMIT".
-	RateLimit      = flag.Int("l", 1, "rate limit")
+	// Can be set via flag "-l" or env var "RATE_LIMIT".
+	RateLimit = flag.Int("l", 1, "rate limit")
 )
 
 // ConfigAgent parses command-line flags and environment variables
@@ -69,7 +69,7 @@ func ConfigAgent() {
 			RateLimit = &i
 		}
 	}
-	
+
 	// Print current config values
 	println("EndpointAgent=", *EndpointAgent)
 	println("ReportInterval=", *ReportInterval)

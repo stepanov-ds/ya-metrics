@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -10,9 +11,14 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/sender"
 )
 
-//TODO logger
+var (
+	Version   string
+	BuildDate string
+	Commit    string
+)
 
 func main() {
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", Version, BuildDate, Commit)
 	agent.ConfigAgent()
 	var headers http.Header = make(map[string][]string)
 	headers.Add("Content-Type", "application/json")

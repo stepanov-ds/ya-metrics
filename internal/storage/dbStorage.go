@@ -20,10 +20,21 @@ import (
 	"go.uber.org/zap"
 )
 
+type PgxPooler interface {
+	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
+	Query(context.Context, string, ...interface{}) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(context.Context) (pgx.Tx, error)
+}
+
 // DBStorage is a PostgreSQL-backed implementation of the Storage interface.
 type DBStorage struct {
-	Pool *pgxpool.Pool
+	Pool PgxPooler
 }
+
+// type DBStorage struct {
+// 	Pool *pgxpool.Pool
+// }
 
 // NewDBPool creates a new connection pool to PostgreSQL.
 //
