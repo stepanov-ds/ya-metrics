@@ -9,6 +9,8 @@ package router
 import (
 	// "net/http"
 
+	"crypto/rsa"
+
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -26,11 +28,14 @@ import (
 // - Hash validation middleware (optional)
 // - Metric update and value retrieval endpoints
 // - Pprof profiling routes
-func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
+func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool, privateKey *rsa.PrivateKey) {
 	r.Use(middlewares.Gzip())
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
+	r.Use(middlewares.Crypto(privateKey))
+
 	r.Use(middlewares.WithLogging())
+
 	// if *server.Key != "" {
 	// 	r.Use(middlewares.HashCheck())
 	// }

@@ -7,12 +7,17 @@
 package agent
 
 import (
+	"encoding/json"
 	"flag"
 	"os"
 	"strconv"
+	"time"
 )
 
 var (
+	// Crypto hold a public key
+	CryptoKey  = flag.String("y", "cert.pem", "crypto key")
+	ConfigPath = flag.String("c", "", "config")
 	// EndpointAgent holds the server address in the format "host:port".
 	// Can be set via flag "-a" or env var "ADDRESS".
 	EndpointAgent = flag.String("a", "localhost:8080", "endpoint")
@@ -28,6 +33,8 @@ var (
 	// RateLimit defines maximum number of concurrent requests to the server.
 	// Can be set via flag "-l" or env var "RATE_LIMIT".
 	RateLimit = flag.Int("l", 1, "rate limit")
+
+	Loaded = false
 )
 
 // ConfigAgent parses command-line flags and environment variables
@@ -36,9 +43,52 @@ var (
 // It respects the following precedence:
 // 1. Command-line flags override environment variables.
 // 2. Environment variables override defaults.
-func ConfigAgent() {
+func ConfigAgent() error {
+	var CryptoKeyVar string
+	var ConfigPathVar string
+	flag.StringVar(&CryptoKeyVar, "crypto-key", "cert.pem", "crypto key")
+	flag.StringVar(&ConfigPathVar, "config", "", "config")
 	flag.Parse()
 
+	if CryptoKeyVar != "" {
+		*CryptoKey = CryptoKeyVar
+	}
+	if ConfigPathVar != "" {
+		*ConfigPath = ConfigPathVar
+	}
+
+	// ConfigPath := utils.GetFlagValue("config")
+	// if ConfigPath == "" {
+	// 	ConfigPath = utils.GetFlagValue("c")
+	// }
+
+	if *ConfigPath == "" {
+		*ConfigPath = os.Getenv("CONFIG")
+	}
+
+	err := LoadConfigFile()
+	if err != nil {
+		return err
+	}
+	loadFromEnv()
+
+	// Print current config values
+	println("EndpointAgent=", *EndpointAgent)
+	println("ReportInterval=", *ReportInterval)
+	println("PollInterval=", *PollInterval)
+	println("Key=", *Key)
+	println("RateLimit=", *RateLimit)
+	return nil
+}
+
+type Config struct {
+	Address        string `json:"address,omitempty"`
+	CryptoKey      string `json:"crypto_key,omitempty"`
+	ReportInterval string `json:"report_interval,omitempty"`
+	PollInterval   string `json:"poll_interval,omitempty"`
+}
+
+func loadFromEnv() {
 	// Override with environment variables if present
 	address, found := os.LookupEnv("ADDRESS")
 	if found {
@@ -69,11 +119,80 @@ func ConfigAgent() {
 			RateLimit = &i
 		}
 	}
+	cr, found := os.LookupEnv("CRYPTO_KEY")
+	if found {
+		CryptoKey = &cr
+	}
+}
 
-	// Print current config values
-	println("EndpointAgent=", *EndpointAgent)
-	println("ReportInterval=", *ReportInterval)
-	println("PollInterval=", *PollInterval)
-	println("Key=", *Key)
-	println("RateLimit=", *RateLimit)
+func LoadConfigFile() error {
+	cfg := &Config{}
+	var a string
+	var b int
+	var c int
+	var d string
+	ab, bb, cb, db := false, false, false, false
+	if *EndpointAgent != "localhost:8080" {
+		a = *EndpointAgent
+		ab = true
+	}
+	if *ReportInterval != 10 {
+		b = *ReportInterval
+		bb = true
+	}
+	if *PollInterval != 2 {
+		c = *PollInterval
+		cb = true
+	}
+	if *CryptoKey != "cert.pem" {
+		d = *CryptoKey
+		db = true
+	}
+
+	if *ConfigPath != "" {
+		file, err := os.Open(*ConfigPath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		decoder := json.NewDecoder(file)
+		if err = decoder.Decode(cfg); err != nil {
+			return err
+		}
+		*EndpointAgent = cfg.Address
+		dur, err := time.ParseDuration(cfg.ReportInterval)
+		if err != nil {
+			return err
+		}
+		*ReportInterval = int(dur.Seconds())
+		dur, err = time.ParseDuration(cfg.PollInterval)
+		if err != nil {
+			return err
+		}
+		*PollInterval = int(dur.Seconds())
+		*CryptoKey = cfg.CryptoKey
+		Loaded = true
+	}
+	checkLoaded(ab, bb, cb, db, a, b, c, d)
+
+	return nil
+}
+
+func checkLoaded(ab, bb, cb, db bool, a string, b int, c int, d string) {
+	if Loaded {
+		if ab {
+			*EndpointAgent = a
+		}
+		if bb {
+			*ReportInterval = b
+		}
+		if cb {
+			*PollInterval = c
+		}
+		if db {
+			*CryptoKey = d
+		}
+		// *EndpointAgent, *ReportInterval , *PollInterval, *CryptoKey = a, b, c, d
+	}
 }

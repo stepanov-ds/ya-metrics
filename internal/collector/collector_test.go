@@ -1,9 +1,11 @@
 package collector
 
 import (
+	"context"
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
@@ -63,6 +65,12 @@ func TestCollector_CollectMetrics(t *testing.T) {
 				require.True(t, ok, "Key %q should be present in metricsMap", key)
 				require.NotZero(t, value, "Metric %q should not be zero", key)
 			}
+			ctx, cancel := context.WithCancel(context.Background())
+			wg := &sync.WaitGroup{}
+			wg.Add(1)
+			tt.c.Collect(ctx, wg, 1*time.Millisecond, tt.c.CollectMetrics)
+			time.Sleep(100 * time.Millisecond)
+			cancel()
 		})
 	}
 }
