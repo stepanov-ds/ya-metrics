@@ -106,8 +106,6 @@ func (m *MockRows) Close() {
 	m.Called()
 }
 
-// --- Тесты ---
-
 func TestDBStorage_GetMetric_Success(t *testing.T) {
 	mockPool := new(MockPool)
 	dbStorage := &DBStorage{

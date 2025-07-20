@@ -98,11 +98,6 @@ func setupTestRouterWithCrypto(privKey *rsa.PrivateKey) *gin.Engine {
 }
 
 func TestCryptoMiddleware_DecryptsSuccessfully(t *testing.T) {
-	// dir, err := os.Getwd()
-	// if err != nil {
-	//     fmt.Println(err.Error())
-	// }
-	// fmt.Println("Working directory:", dir)
 	privKey := server.ReadPrivateKey("../../private_key.pem")
 	r := setupTestRouterWithCrypto(privKey)
 

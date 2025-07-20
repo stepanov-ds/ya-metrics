@@ -16,7 +16,6 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"go.uber.org/zap"
-	// _ "net/http/pprof"
 )
 
 func main() {
@@ -28,7 +27,8 @@ func main() {
 	var st storage.Storage
 	var p *pgxpool.Pool
 
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
 
 	if server.IsDB {
 		st = storage.NewDBStorage(ctx, storage.NewDBPool(ctx, *server.DatabaseDSN))

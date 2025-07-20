@@ -30,7 +30,6 @@ func TestMain(m *testing.M) {
 
 func TestUpdates(t *testing.T) {
 	type args struct {
-		//w       http.ResponseWriter
 		r       *http.Request
 		storage storage.Storage
 	}

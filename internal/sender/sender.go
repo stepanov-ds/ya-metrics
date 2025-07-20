@@ -158,16 +158,6 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	if err != nil {
 		return err
 	}
-	if s.CryptoKey != nil {
-		encryptedPayload, err1 := Encrypt(jsonBytes, s.CryptoKey)
-		if err1 != nil {
-			return err1
-		}
-		jsonBytes, err = json.Marshal(encryptedPayload)
-		if err != nil {
-			return err
-		}
-	}
 
 	var hashString string
 	if *agent.Key != "" {
@@ -183,6 +173,19 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	if err = gzWriter.Close(); err != nil {
 		return err
 	}
+
+	if s.CryptoKey != nil {
+		encryptedPayload, err1 := Encrypt(buf.Bytes(), s.CryptoKey)
+		if err1 != nil {
+			return err1
+		}
+		encryptedBytes, err2 := json.Marshal(encryptedPayload)
+		if err != nil {
+			return err2
+		}
+		buf = *bytes.NewBuffer(encryptedBytes)
+	}
+
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, &buf)
 	if err != nil {
 		return err
@@ -208,10 +211,10 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	return err
 }
 
-// sendAll sends all metrics in bulk at the specified interval.
+// SendAll sends all metrics in bulk at the specified interval.
 //
 // Uses a semaphore to respect configured rate limit.
-func (s *HTTPSender) sendAll(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, collector *collector.Collector, gzip bool) {
+func (s *HTTPSender) SendAll(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, collector *collector.Collector, gzip bool) {
 	defer wg.Done()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -242,9 +245,4 @@ func (s *HTTPSender) sendAll(ctx context.Context, wg *sync.WaitGroup, interval t
 			<-s.sem
 		}
 	}
-}
-
-// Send starts the background loop that periodically sends metrics to the server.
-func (s *HTTPSender) Send(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, collector *collector.Collector, gzip bool) {
-	go s.sendAll(ctx, wg, interval, collector, gzip)
 }

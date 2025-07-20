@@ -125,9 +125,9 @@ func (c *Collector) GetAllMetrics() map[string]utils.Metrics {
 	return result
 }
 
-// collect runs the given function f periodically at specified intervals.
+// Collect runs the given function f periodically at specified intervals.
 // This is a helper method used by Collect().
-func (c *Collector) collect(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, f func()) {
+func (c *Collector) Collect(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, f func()) {
 	defer wg.Done()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -141,10 +141,4 @@ func (c *Collector) collect(ctx context.Context, wg *sync.WaitGroup, interval ti
 			time.Sleep(interval)
 		}
 	}
-}
-
-// Collect starts the metric collection loop in a separate goroutine.
-// Calls the provided function f every interval.
-func (c *Collector) Collect(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, f func()) {
-	go c.collect(ctx, wg, interval, f)
 }

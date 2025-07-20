@@ -12,9 +12,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stepanov-ds/ya-metrics/internal/logger"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
-	"go.uber.org/zap"
 )
 
 func decrypt(payload *utils.EncryptedPayload, privKey *rsa.PrivateKey) ([]byte, error) {
@@ -61,14 +59,12 @@ func Crypto(privKey *rsa.PrivateKey) gin.HandlerFunc {
 		if privKey != nil {
 			var encryptedPayload utils.EncryptedPayload
 			if err := c.ShouldBindBodyWithJSON(&encryptedPayload); err != nil {
-				logger.Log.Warn("Updates", zap.String("error while unmarshal body", err.Error()))
 				c.AbortWithStatus(http.StatusBadRequest)
 				return
 			}
 
 			decrypted, err := decrypt(&encryptedPayload, privKey)
 			if err != nil {
-				logger.Log.Warn("Updates", zap.String("error while decrypt body", err.Error()))
 				c.AbortWithStatus(http.StatusBadRequest)
 				return
 			}

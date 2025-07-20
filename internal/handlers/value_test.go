@@ -137,8 +137,6 @@ func TestValue(t *testing.T) {
 				Value(ctx, tt.st)
 			})
 			r.HandleContext(ctx)
-			// print("_______________________________________BODY___________________")
-			// print(rr.Body.String())
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 			if tt.expectedStatus == http.StatusOK {
 				assert.Equal(t, tt.expectedBody, rr.Body.String())

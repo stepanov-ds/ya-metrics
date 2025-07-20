@@ -35,12 +35,6 @@ func Updates(c *gin.Context, st storage.Storage) {
 		logger.Log.Error("Updates", zap.String("error while unmarshal body", err.Error()))
 	}
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
-	// m := make([]utils.Metrics, 0, 30)
-	// if err := c.ShouldBindBodyWithJSON(&m); err != nil {
-	// 	logger.Log.Error("Updates", zap.String("error while unmarshal body", err.Error()))
-	// 	c.AbortWithStatus(http.StatusBadRequest)
-	// 	return
-	// }
 
 	ctx := c.Request.Context()
 

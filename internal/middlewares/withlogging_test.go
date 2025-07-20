@@ -12,7 +12,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// setupTestRouter создает тестовый Gin-роутер с middleware WithLogging
 func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

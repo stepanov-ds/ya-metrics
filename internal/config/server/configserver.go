@@ -79,10 +79,6 @@ func ConfigServer() error {
 		return err
 	}
 
-	// if Loaded {
-	// 	*EndpointServer, *FileStorePath , *DatabaseDSN, *CryptoKey, *StoreInterval, IsDB = a, b, c, d, e, f
-	// }
-
 	loadFromEnv()
 
 	logger.Log.Info("ConfigServer",
@@ -234,6 +230,5 @@ func checkLoaded(a string, b int, c, d, e string, f, ab, bb, cb, db, eb, fb bool
 		if fb {
 			IsDB = f
 		}
-		// *EndpointAgent, *ReportInterval , *PollInterval, *CryptoKey = a, b, c, d
 	}
 }

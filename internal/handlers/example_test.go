@@ -23,7 +23,6 @@ func init() {
 	r.Use(middlewares.Gzip())
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
-	// r.Use(middlewares.WithLogging())
 	r.RedirectTrailingSlash = true
 
 	r.Any("/update/:metric_type/:metric_name/:value", func(ctx *gin.Context) {
@@ -73,7 +72,6 @@ func ExampleUpdate() {
 	}
 	`
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
-	// println(err)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
@@ -99,7 +97,6 @@ func ExampleRoot() {
 	}
 	`
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/update/", strings.NewReader(body))
-	// println(err)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)

@@ -21,20 +21,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// generateRSAKeys генерирует пару RSA-ключей для теста
 func generateRSAKeys(t *testing.T) (*rsa.PrivateKey, *rsa.PublicKey) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 	return privateKey, &privateKey.PublicKey
 }
 
-// createTestServer создаёт тестовый HTTP-сервер
 func createTestServer(handler http.HandlerFunc) string {
 	srv := httptest.NewServer(handler)
 	return srv.URL
 }
 
-// mockCollector возвращает готовый collector с тестовыми метриками
 func mockCollector() *collector.Collector {
 	c := collector.NewCollector(&sync.Map{})
 	c.CollectMetrics()
@@ -181,7 +178,7 @@ func TestSendAll(t *testing.T) {
 
 	s := NewHTTPSender(5*time.Second, headers, serverURL, 1, nil)
 
-	go s.Send(ctx, wg, 100*time.Millisecond, c, false)
+	go s.SendAll(ctx, wg, 100*time.Millisecond, c, false)
 
 	time.Sleep(300 * time.Millisecond)
 	cancel()

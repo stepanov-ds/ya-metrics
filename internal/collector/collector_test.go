@@ -68,7 +68,7 @@ func TestCollector_CollectMetrics(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			wg := &sync.WaitGroup{}
 			wg.Add(1)
-			tt.c.Collect(ctx, wg, 1*time.Millisecond, tt.c.CollectMetrics)
+			go tt.c.Collect(ctx, wg, 1*time.Millisecond, tt.c.CollectMetrics)
 			time.Sleep(100 * time.Millisecond)
 			cancel()
 		})

@@ -33,15 +33,15 @@ func main() {
 
 	collector1 := collector.NewCollector(&sync.Map{})
 	wg.Add(1)
-	collector1.Collect(ctx, wg, time.Duration(*agent.PollInterval)*time.Second, collector1.CollectMetrics)
+	go collector1.Collect(ctx, wg, time.Duration(*agent.PollInterval)*time.Second, collector1.CollectMetrics)
 	wg.Add(1)
-	sender.Send(ctx, wg, time.Duration(*agent.ReportInterval)*time.Second, collector1, true)
+	go sender.SendAll(ctx, wg, time.Duration(*agent.ReportInterval)*time.Second, collector1, true)
 
 	collector2 := collector.NewCollector(&sync.Map{})
 	wg.Add(1)
-	collector2.Collect(ctx, wg, time.Duration(*agent.PollInterval)*time.Second, collector2.CollectNewMetrics)
+	go collector2.Collect(ctx, wg, time.Duration(*agent.PollInterval)*time.Second, collector2.CollectNewMetrics)
 	wg.Add(1)
-	sender.Send(ctx, wg, time.Duration(*agent.ReportInterval)*time.Second, collector2, true)
+	go sender.SendAll(ctx, wg, time.Duration(*agent.ReportInterval)*time.Second, collector2, true)
 
 	wg.Wait()
 }

@@ -56,12 +56,6 @@ func ConfigAgent() error {
 	if ConfigPathVar != "" {
 		*ConfigPath = ConfigPathVar
 	}
-
-	// ConfigPath := utils.GetFlagValue("config")
-	// if ConfigPath == "" {
-	// 	ConfigPath = utils.GetFlagValue("c")
-	// }
-
 	if *ConfigPath == "" {
 		*ConfigPath = os.Getenv("CONFIG")
 	}
@@ -193,6 +187,5 @@ func checkLoaded(ab, bb, cb, db bool, a string, b int, c int, d string) {
 		if db {
 			*CryptoKey = d
 		}
-		// *EndpointAgent, *ReportInterval , *PollInterval, *CryptoKey = a, b, c, d
 	}
 }
