@@ -9,6 +9,9 @@ package router
 import (
 	// "net/http"
 
+	"crypto/rsa"
+	"net/http"
+
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -26,15 +29,12 @@ import (
 // - Hash validation middleware (optional)
 // - Metric update and value retrieval endpoints
 // - Pprof profiling routes
-func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
+func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool, privateKey *rsa.PrivateKey) {
+	r.Use(middlewares.Crypto(privateKey))
 	r.Use(middlewares.Gzip())
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.Use(middlewares.WithLogging())
-	// if *server.Key != "" {
-	// 	r.Use(middlewares.HashCheck())
-	// }
-
 	r.RedirectTrailingSlash = true
 
 	// Update metric by URL path
@@ -49,10 +49,6 @@ func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.POST("/update", func(ctx *gin.Context) {
 		handlers.Update(ctx, st)
 	})
-	// r.POST("/update/", func(ctx *gin.Context) {
-	// 	handlers.Update(ctx, st)
-	// })
-
 	// Get metric value by name and type
 	r.GET("/value/:metric_type/:metric_name", func(ctx *gin.Context) {
 		handlers.Value(ctx, st)
@@ -65,9 +61,6 @@ func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.POST("/value", func(ctx *gin.Context) {
 		handlers.Value(ctx, st)
 	})
-	// r.POST("/value/", func(ctx *gin.Context) {
-	// 	handlers.Value(ctx, st)
-	// })
 
 	// Root endpoint to list all metrics
 	r.GET("/", func(ctx *gin.Context) {
@@ -78,18 +71,13 @@ func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool) {
 	r.GET("/ping", func(ctx *gin.Context) {
 		handlers.Ping(ctx, pool)
 	})
-	// r.GET("/ping/", func(ctx *gin.Context) {
-	// 	handlers.Ping(ctx, pool)
-	// })
-
 	// Bulk updates with hash validation
 	r.POST("/updates", middlewares.HashCheck(), func(ctx *gin.Context) {
 		handlers.Updates(ctx, st)
 	})
-	// r.POST("/updates/", func(ctx *gin.Context) {
-	// 	handlers.Updates(ctx, st)
-	// })
-
 	// Register pprof profiling routes under /debug/pprof/*
 	pprof.Register(r)
+	r.NoRoute(func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusNotFound)
+	})
 }

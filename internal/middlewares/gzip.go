@@ -8,29 +8,9 @@ import (
 	"compress/gzip"
 	"io"
 	"net/http"
-	// "strings"
-	// "sync"
 
 	"github.com/gin-gonic/gin"
 )
-
-// var gzipPool = sync.Pool{
-// 	New: func() any {
-// 		// var buf bytes.Buffer
-// 		w := gzip.NewWriter(io.Discard)
-// 		return w
-// 	},
-// }
-
-// type gzipResponseWriter struct {
-// 	gin.ResponseWriter
-// 	gzipWriter *gzip.Writer
-// 	// buffer     *bytes.Buffer
-// }
-
-// func (w *gzipResponseWriter) Write(data []byte) (int, error) {
-// 	return w.gzipWriter.Write(data)
-// }
 
 // Gzip returns a Gin middleware handler that manages gzip-compressed requests.
 //
@@ -58,29 +38,6 @@ func Gzip() gin.HandlerFunc {
 
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(decompressed))
 		}
-
-		// if strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
-		// 	// var buf bytes.Buffer
-		// 	// gz := gzip.NewWriter(&buf)
-
-		// 	gz := gzipPool.Get().(*gzip.Writer)
-		// 	defer gzipPool.Put(gz)
-		// 	gz.Reset(c.Writer)
-
-		// 	c.Writer.Header().Set("Content-Encoding", "gzip")
-		// 	c.Writer.Header().Set("Vary", "Accept-Encoding")
-
-		// 	c.Writer = &gzipResponseWriter{
-		// 		ResponseWriter: c.Writer,
-		// 		gzipWriter:     gz,
-		// 		// buffer:         &buf,
-		// 	}
-
-		// 	defer func() {
-		// 		gz.Close()
-		// 		// writer.Write(buf.Bytes())
-		// 	}()
-		// }
 		c.Next()
 	}
 }

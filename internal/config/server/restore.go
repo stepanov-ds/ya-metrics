@@ -35,7 +35,6 @@ func RestoreStorage() *storage.MemStorage {
 	}
 	var syncMap sync.Map
 	for k, v := range metrics {
-		// println(reflect.ValueOf(v).String())
 		syncMap.Store(k, v)
 	}
 	return storage.NewMemStorage(&syncMap)

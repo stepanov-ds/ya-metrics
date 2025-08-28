@@ -1,145 +1,188 @@
 package sender
 
 import (
-	"errors"
+	"compress/gzip"
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"encoding/json"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/stepanov-ds/ya-metrics/internal/collector"
+	"github.com/stepanov-ds/ya-metrics/internal/config/agent"
 	"github.com/stepanov-ds/ya-metrics/internal/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-type MockClient struct {
-	http.Client
-	Headers http.Header
-	DoFunc  func(*http.Request) (*http.Response, error)
-	BaseURL string
+func generateRSAKeys(t *testing.T) (*rsa.PrivateKey, *rsa.PublicKey) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	return privateKey, &privateKey.PublicKey
 }
 
-func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
-	return m.DoFunc(req)
+func createTestServer(handler http.HandlerFunc) string {
+	srv := httptest.NewServer(handler)
+	return srv.URL
 }
 
-func TestHttpSender_SendMetric(t *testing.T) {
-	type args struct {
-		metric utils.Metrics
+func mockCollector() *collector.Collector {
+	c := collector.NewCollector(&sync.Map{})
+	c.CollectMetrics()
+	return c
+}
+
+func TestEncryptDecrypt(t *testing.T) {
+	_, pub := generateRSAKeys(t)
+
+	plainText := []byte("secret_data")
+	payload, err := Encrypt(plainText, pub)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, payload.EncryptedAESKey)
+	assert.NotEmpty(t, payload.CipherText)
+	assert.NotEmpty(t, payload.Nonce)
+}
+
+type roundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestSendMetric(t *testing.T) {
+	metric := utils.Metrics{
+		ID:    "test_gauge",
+		MType: "gauge",
+		Value: new(float64),
 	}
-	tests := []struct {
-		args    args
-		want    *http.Request
-		wantErr error
-		name    string
-	}{
-		{},
-		// TODO: Add test cases.
-		// {
-		// 	name: "Positive #1 send gauge",
-		// 	args: args{
-		// 		name:   "testGauge",
-		// 		metric: utils.NewMetricGauge(123.1),
-		// 	},
-		// 	want: func() *http.Request {
-		// 		req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:8080/update/gauge/testGauge/%f", 123.1), nil)
-		// 		req.Header = map[string][]string{
-		// 			"Content-Type": {"text/plain"},
-		// 		}
-		// 		return req
-		// 	}(),
-		// 	wantErr: nil,
-		// },
-		// {
-		// 	name: "Positive #2 send counter",
-		// 	args: args{
-		// 		name:   "testCounter",
-		// 		metric: utils.NewMetricCounter(123),
-		// 	},
-		// 	want: func() *http.Request {
-		// 		req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:8080/update/counter/testCounter/%d", 123), nil)
-		// 		req.Header = map[string][]string{
-		// 			"Content-Type": {"text/plain"},
-		// 		}
-		// 		return req
-		// 	}(),
-		// 	wantErr: nil,
-		// },
-		// {
-		// 	name: "Negative #1 receive error while send metric",
-		// 	args: args{
-		// 		name:   "testCounter",
-		// 		metric: utils.NewMetricCounter(123),
-		// 	},
-		// },
-		// {
-		// 	name: "Negative #2 receive error while creating request",
-		// 	args: args{
-		// 		name:   "testCounter",
-		// 		metric: utils.NewMetricCounter(123),
-		// 	},
-		// },
+	*metric.Value = 1.23
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var received utils.Metrics
+		err := json.Unmarshal(body, &received)
+		require.NoError(t, err)
+		assert.Equal(t, metric.ID, received.ID)
+		w.WriteHeader(http.StatusOK)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if len(tt.name) >= 8 && tt.name[:8] == "Positive" {
-				MockClient := &MockClient{
-					DoFunc: func(req *http.Request) (*http.Response, error) {
-						assert.Equal(t, tt.want.URL, req.URL)
-						assert.Equal(t, tt.want.Method, req.Method)
-						assert.Equal(t, tt.want.Body, req.Body)
-						assert.Equal(t, tt.want.Header, req.Header)
-						return &http.Response{
-							StatusCode: http.StatusOK,
-							Body:       http.NoBody,
-						}, nil
-					},
-				}
-				sender := &HTTPSender{
-					BaseURL: "http://localhost:8080",
-					Headers: map[string][]string{
-						"Content-Type": {"text/plain"},
-					},
-					Client: MockClient,
-				}
-				err := sender.SendMetric(tt.args.metric, "/update")
-				if err != nil {
-					assert.Fail(t, err.Error())
-				}
-			}
-			if len(tt.name) >= 11 && tt.name[:11] == "Negative #1" {
-				MockClient := &MockClient{
-					DoFunc: func(req *http.Request) (*http.Response, error) {
-						return nil, errors.New("mock error")
-					},
-				}
-				sender := &HTTPSender{
-					BaseURL: "http://localhost:8080",
-					Headers: map[string][]string{
-						"Content-Type": {"text/plain"},
-					},
-					Client: MockClient,
-				}
-				err := sender.SendMetric(tt.args.metric, "/update")
-				assert.Error(t, err)
-			}
-			if len(tt.name) >= 11 && tt.name[:11] == "Negative #2" {
-				MockClient := &MockClient{
-					DoFunc: func(req *http.Request) (*http.Response, error) {
-						return nil, nil
-					},
-				}
-				sender := &HTTPSender{
-					BaseURL: "\t",
-					Headers: map[string][]string{
-						"Content-Type": {"text/plain"},
-					},
-					Client: MockClient,
-				}
-				err := sender.SendMetric(tt.args.metric, "/update")
-				assert.Error(t, err)
-			}
-		})
+
+	serverURL := createTestServer(http.HandlerFunc(handler))
+
+	headers := make(http.Header)
+	headers.Set("Content-Type", "application/json")
+
+	sender := NewHTTPSender(5*time.Second, headers, serverURL, 1, nil)
+
+	err := sender.SendMetric(metric, "/update")
+	assert.NoError(t, err)
+}
+
+func TestSendMetricWithHash(t *testing.T) {
+	key := "test_secret_key"
+	agent.Key = &key
+
+	metric := utils.Metrics{
+		ID:    "test_counter",
+		MType: "counter",
+		Delta: new(int64),
 	}
+	*metric.Delta = 42
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		hash := r.Header.Get("HashSHA256")
+		body, _ := io.ReadAll(r.Body)
+		expectedHash := utils.CalculateHashWithKey(body, key)
+
+		assert.Equal(t, expectedHash, hash)
+		w.WriteHeader(http.StatusOK)
+	}
+
+	serverURL := createTestServer(http.HandlerFunc(handler))
+
+	headers := make(http.Header)
+	headers.Set("Content-Type", "application/json")
+
+	sender := NewHTTPSender(5*time.Second, headers, serverURL, 1, nil)
+
+	err := sender.SendMetric(metric, "/update")
+	assert.NoError(t, err)
+}
+
+func TestSendMetricGzip(t *testing.T) {
+	metric := utils.Metrics{
+		ID:    "test_gauge",
+		MType: "gauge",
+		Value: new(float64),
+	}
+	*metric.Value = 1.23
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+
+		assert.Equal(t, "gzip", r.Header.Get("Content-Encoding"))
+		assert.Equal(t, "gzip", r.Header.Get("Accept-Encoding"))
+
+		gzReader, err := gzip.NewReader(r.Body)
+		require.NoError(t, err)
+		defer gzReader.Close()
+
+		body, err := io.ReadAll(gzReader)
+		require.NoError(t, err)
+
+		var received utils.Metrics
+		err = json.Unmarshal(body, &received)
+		require.NoError(t, err)
+		assert.Equal(t, metric.ID, received.ID)
+		w.WriteHeader(http.StatusOK)
+	}
+
+	serverURL := createTestServer(http.HandlerFunc(handler))
+
+	headers := make(http.Header)
+	headers.Set("Content-Type", "application/json")
+
+	sender := NewHTTPSender(5*time.Second, headers, serverURL, 1, nil)
+
+	err := sender.SendMetricGzip(metric, "/update")
+	assert.NoError(t, err)
+}
+
+func TestSendAll(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+
+	c := mockCollector()
+
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var received []utils.Metrics
+		err := json.Unmarshal(body, &received)
+		require.NoError(t, err)
+		assert.Len(t, received, 29)
+		w.WriteHeader(http.StatusOK)
+	}
+
+	serverURL := createTestServer(http.HandlerFunc(handler))
+
+	headers := make(http.Header)
+	headers.Set("Content-Type", "application/json")
+
+	s := NewHTTPSender(5*time.Second, headers, serverURL, 1, nil)
+
+	go s.SendAll(ctx, wg, 100*time.Millisecond, c, false)
+
+	time.Sleep(300 * time.Millisecond)
+	cancel()
+	wg.Wait()
 }
 
 func TestNewHttpSender(t *testing.T) {
@@ -177,7 +220,8 @@ func TestNewHttpSender(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sender := NewHTTPSender(tt.args.timeout, tt.args.headers, tt.args.baseURL, 1)
+			cryptoKey := "../../cert.pem"
+			sender := NewHTTPSender(tt.args.timeout, tt.args.headers, tt.args.baseURL, 1, agent.ReadPublicKey(cryptoKey).PublicKey.(*rsa.PublicKey))
 			assert.Equal(t, tt.want.BaseURL, sender.BaseURL)
 			assert.True(t, reflect.DeepEqual(tt.want.Headers, sender.Headers))
 		})

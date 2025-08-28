@@ -8,9 +8,11 @@
 package server
 
 import (
+	"encoding/json"
 	"flag"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
 	"go.uber.org/zap"
@@ -40,6 +42,10 @@ var (
 	// Key holds an optional signing key used to verify metric payloads.
 	// Can be set via flag "-k" or env var "KEY".
 	Key = flag.String("k", "", "key")
+	// Crypto hold a private key
+	CryptoKey  = flag.String("y", "private_key.pem", "crypto key")
+	ConfigFile = flag.String("c", "", "config file")
+	Loaded     = false
 )
 
 // ConfigServer parses command-line flags and environment variables
@@ -50,9 +56,53 @@ var (
 // 2. Environment variables override defaults.
 //
 // After parsing, it logs the final configuration using zap.Logger.
-func ConfigServer() {
+func ConfigServer() error {
+	var CryptoKeyVar string
+	var ConfigFileVar string
+	flag.StringVar(&CryptoKeyVar, "crypto-key", "cert.pem", "crypto key")
+	flag.StringVar(&ConfigFileVar, "config", "", "config")
 	flag.Parse()
 
+	if CryptoKeyVar != "" {
+		*CryptoKey = CryptoKeyVar
+	}
+	if ConfigFileVar != "" {
+		*ConfigFile = ConfigFileVar
+	}
+
+	if *ConfigFile == "" {
+		*ConfigFile = os.Getenv("CONFIG")
+	}
+
+	err := LoadConfigFile()
+	if err != nil {
+		return err
+	}
+
+	loadFromEnv()
+
+	logger.Log.Info("ConfigServer",
+		zap.String("EndpointServer", *EndpointServer),
+		zap.Int("StoreInterval", *StoreInterval),
+		zap.String("FileStorePath", *FileStorePath),
+		zap.Bool("Restore", *Restore),
+		zap.String("DatabaseDSN", *DatabaseDSN),
+		zap.Bool("IsDB", IsDB),
+		zap.String("Key", *Key),
+	)
+	return nil
+}
+
+type Config struct {
+	Address       string `json:"address,omitempty"`
+	StoreFile     string `json:"store_file,omitempty"`
+	DatabaseDSN   string `json:"database_dsn,omitempty"`
+	CryptoKey     string `json:"crypto_key,omitempty"`
+	StoreInterval string `json:"store_interval,omitempty"`
+	Restore       bool   `json:"restore,omitempty"`
+}
+
+func loadFromEnv() {
 	// Override with environment variables if present
 	address, found := os.LookupEnv("ADDRESS")
 	if found {
@@ -88,13 +138,97 @@ func ConfigServer() {
 	if found {
 		Key = &k
 	}
-	logger.Log.Info("ConfigServer",
-		zap.String("EndpointServer", *EndpointServer),
-		zap.Int("StoreInterval", *StoreInterval),
-		zap.String("FileStorePath", *FileStorePath),
-		zap.Bool("Restore", *Restore),
-		zap.String("DatabaseDSN", *DatabaseDSN),
-		zap.Bool("IsDB", IsDB),
-		zap.String("Key", *Key),
-	)
+	cr, found := os.LookupEnv("CRYPTO_KEY")
+	if found {
+		CryptoKey = &cr
+	}
+}
+
+func LoadConfigFile() error {
+	cfg := &Config{}
+	a, b, c, d, e, f, ab, bb, cb, db, eb, fb := storeParsed()
+
+	if *ConfigFile != "" {
+		file, err := os.Open(*ConfigFile)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		decoder := json.NewDecoder(file)
+		if err = decoder.Decode(cfg); err != nil {
+			return err
+		}
+		*EndpointServer = cfg.Address
+		dur, err := time.ParseDuration(cfg.StoreInterval)
+		if err != nil {
+			return err
+		}
+		*StoreInterval = int(dur.Seconds())
+		*FileStorePath = cfg.StoreFile
+		*Restore = cfg.Restore
+		*DatabaseDSN = cfg.DatabaseDSN
+		if cfg.DatabaseDSN != "" {
+			IsDB = true
+		}
+		*CryptoKey = cfg.CryptoKey
+		Loaded = true
+	}
+	checkLoaded(a, b, c, d, e, f, ab, bb, cb, db, eb, fb)
+	return nil
+}
+func storeParsed() (string, int, string, string, string, bool, bool, bool, bool, bool, bool, bool) {
+	var a, c, d, e string
+	var b int
+	var f bool
+
+	ab, bb, cb, db, eb, fb := false, false, false, false, false, false
+	if *EndpointServer != "localhost:8080" {
+		a = *EndpointServer
+		ab = true
+	}
+	if *StoreInterval != 300 {
+		b = *StoreInterval
+		bb = true
+	}
+	if *FileStorePath != "filestore.out" {
+		c = *FileStorePath
+		cb = true
+	}
+	if *CryptoKey != "private_key.pem" {
+		d = *CryptoKey
+		db = true
+	}
+	if *DatabaseDSN != "" {
+		e = *DatabaseDSN
+		eb = true
+	}
+	if IsDB {
+		f = IsDB
+		fb = true
+	}
+	return a, b, c, d, e, f, ab, bb, cb, db, eb, fb
+}
+
+func checkLoaded(a string, b int, c, d, e string, f, ab, bb, cb, db, eb, fb bool) {
+	if Loaded {
+		if ab {
+			*EndpointServer = a
+		}
+		if bb {
+			*StoreInterval = b
+		}
+		if cb {
+			*FileStorePath = c
+		}
+		if db {
+			*CryptoKey = d
+		}
+		if eb {
+			*DatabaseDSN = e
+		}
+		if fb {
+			IsDB = f
+		}
+	}
 }

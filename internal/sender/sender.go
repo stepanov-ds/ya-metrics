@@ -9,8 +9,16 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -31,10 +39,11 @@ type HTTPClient interface {
 
 // HTTPSender implements metric sending via HTTP requests.
 type HTTPSender struct {
-	Headers http.Header
-	Client  HTTPClient
-	sem     chan struct{}
-	BaseURL string
+	Headers   http.Header
+	Client    HTTPClient
+	CryptoKey *rsa.PublicKey
+	sem       chan struct{}
+	BaseURL   string
 }
 
 // NewHTTPSender creates and returns a new HTTPSender instance.
@@ -44,15 +53,53 @@ type HTTPSender struct {
 // - Headers to be used in each request
 // - HTTP client with timeout
 // - Semaphore based on rate limit
-func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string, rateLimit int) HTTPSender {
+func NewHTTPSender(timeout time.Duration, headers http.Header, baseURL string, rateLimit int, cryptoKey *rsa.PublicKey) HTTPSender {
 	return HTTPSender{
-		BaseURL: baseURL,
-		Headers: headers,
+		sem:       make(chan struct{}, rateLimit),
+		BaseURL:   baseURL,
+		CryptoKey: cryptoKey,
+		Headers:   headers,
 		Client: &http.Client{
 			Timeout: timeout,
 		},
-		sem: make(chan struct{}, rateLimit),
 	}
+}
+
+func Encrypt(plainText []byte, publicKey *rsa.PublicKey) (*utils.EncryptedPayload, error) {
+	aesKey := make([]byte, 32)
+	if _, err := rand.Read(aesKey); err != nil {
+		return nil, fmt.Errorf("ошибка генерации AES ключа: %v", err)
+	}
+
+	block, err := aes.NewCipher(aesKey)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания AES шифра: %v", err)
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания GCM: %v", err)
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err = rand.Read(nonce); err != nil {
+		return nil, fmt.Errorf("ошибка генерации nonce: %v", err)
+	}
+
+	cipherText := gcm.Seal(nil, nonce, plainText, nil)
+
+	encryptedAESKey, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, aesKey)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка шифрования AES ключа RSA: %v", err)
+	}
+
+	payload := &utils.EncryptedPayload{
+		EncryptedAESKey: base64.StdEncoding.EncodeToString(encryptedAESKey),
+		CipherText:      base64.StdEncoding.EncodeToString(cipherText),
+		Nonce:           base64.StdEncoding.EncodeToString(nonce),
+	}
+
+	return payload, nil
 }
 
 // SendMetric sends a single metric to the server using HTTP POST.
@@ -62,6 +109,16 @@ func (s *HTTPSender) SendMetric(m interface{}, path string) error {
 	jsonBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
+	}
+	if s.CryptoKey != nil {
+		encryptedPayload, err1 := Encrypt(jsonBytes, s.CryptoKey)
+		if err1 != nil {
+			return err1
+		}
+		jsonBytes, err = json.Marshal(encryptedPayload)
+		if err != nil {
+			return err
+		}
 	}
 
 	var hashString string
@@ -101,6 +158,7 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	if err != nil {
 		return err
 	}
+
 	var hashString string
 	if *agent.Key != "" {
 		hashString = utils.CalculateHashWithKey(jsonBytes, *agent.Key)
@@ -115,6 +173,19 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	if err = gzWriter.Close(); err != nil {
 		return err
 	}
+
+	if s.CryptoKey != nil {
+		encryptedPayload, err1 := Encrypt(buf.Bytes(), s.CryptoKey)
+		if err1 != nil {
+			return err1
+		}
+		encryptedBytes, err2 := json.Marshal(encryptedPayload)
+		if err != nil {
+			return err2
+		}
+		buf = *bytes.NewBuffer(encryptedBytes)
+	}
+
 	req, err := http.NewRequest(http.MethodPost, s.BaseURL+path, &buf)
 	if err != nil {
 		return err
@@ -140,62 +211,38 @@ func (s *HTTPSender) SendMetricGzip(m interface{}, path string) error {
 	return err
 }
 
-// send sends all metrics individually at the specified interval.
+// SendAll sends all metrics in bulk at the specified interval.
 //
 // Uses a semaphore to respect configured rate limit.
-func (s *HTTPSender) send(interval time.Duration, collector *collector.Collector, gzip bool) {
+func (s *HTTPSender) SendAll(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, collector *collector.Collector, gzip bool) {
+	defer wg.Done()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		s.sem <- struct{}{}
-		for _, v := range collector.GetAllMetrics() {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-ticker.C:
+			s.sem <- struct{}{}
+
+			var metrics []utils.Metrics
+			for _, v := range collector.GetAllMetrics() {
+				metrics = append(metrics, v)
+			}
 			if gzip {
-				err := s.SendMetricGzip(v, "/update")
+				err := s.SendMetricGzip(metrics, "/updates")
 				if err != nil {
 					println(err.Error())
 				}
 			} else {
-				err := s.SendMetric(v, "/update")
+				err := s.SendMetric(metrics, "/updates")
 				if err != nil {
 					println(err.Error())
 				}
 			}
+			<-s.sem
 		}
-		<-s.sem
 	}
-}
-
-// sendAll sends all metrics in bulk at the specified interval.
-//
-// Uses a semaphore to respect configured rate limit.
-func (s *HTTPSender) sendAll(interval time.Duration, collector *collector.Collector, gzip bool) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		s.sem <- struct{}{}
-
-		var metrics []utils.Metrics
-		for _, v := range collector.GetAllMetrics() {
-			metrics = append(metrics, v)
-		}
-		if gzip {
-			err := s.SendMetricGzip(metrics, "/updates")
-			if err != nil {
-				println(err.Error())
-			}
-		} else {
-			err := s.SendMetric(metrics, "/updates")
-			if err != nil {
-				println(err.Error())
-			}
-		}
-		<-s.sem
-	}
-}
-
-// Send starts the background loop that periodically sends metrics to the server.
-func (s *HTTPSender) Send(interval time.Duration, collector *collector.Collector, gzip bool) {
-	go s.sendAll(interval, collector, gzip)
 }

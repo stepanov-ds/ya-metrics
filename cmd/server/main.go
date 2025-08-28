@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,7 +16,6 @@ import (
 	"github.com/stepanov-ds/ya-metrics/internal/logger"
 	"github.com/stepanov-ds/ya-metrics/internal/storage"
 	"go.uber.org/zap"
-	// _ "net/http/pprof"
 )
 
 func main() {
@@ -24,7 +27,8 @@ func main() {
 	var st storage.Storage
 	var p *pgxpool.Pool
 
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
 
 	if server.IsDB {
 		st = storage.NewDBStorage(ctx, storage.NewDBPool(ctx, *server.DatabaseDSN))
@@ -38,12 +42,28 @@ func main() {
 		}
 		go server.StoreInFile(st.(*storage.MemStorage))
 	}
-	router.Route(r, st, p)
+	router.Route(r, st, p, server.ReadPrivateKey(*server.CryptoKey))
 	logger.Log.Info("main", zap.String("working with DB", strconv.FormatBool(server.IsDB)))
 
-	if err := r.Run(*server.EndpointServer); err != nil {
-		panic(err)
+	srv := &http.Server{
+		Addr:    *server.EndpointServer,
+		Handler: r.Handler(),
 	}
 
-	select {}
+	quit := make(chan os.Signal, 1)
+	idleConnsClosed := make(chan struct{})
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	go func() {
+		<-quit
+		if err := srv.Shutdown(context.Background()); err != nil {
+			logger.Log.Info("main", zap.Error(err))
+		}
+		close(idleConnsClosed)
+	}()
+
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		logger.Log.Info("main", zap.Error(err))
+	}
+	<-idleConnsClosed
 }

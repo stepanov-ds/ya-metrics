@@ -14,7 +14,6 @@ import (
 
 func TestUpdate(t *testing.T) {
 	type args struct {
-		//w       http.ResponseWriter
 		r       *http.Request
 		storage storage.Storage
 	}

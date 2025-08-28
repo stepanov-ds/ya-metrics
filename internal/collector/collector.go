@@ -8,8 +8,8 @@
 package collector
 
 import (
+	"context"
 	"math/rand"
-	"reflect"
 	"runtime"
 	"strconv"
 	"sync"
@@ -78,8 +78,6 @@ func (c *Collector) CollectMetrics() {
 	if value, exist := c.Metrics.Load("PollCount"); exist {
 		if v, ok := value.(utils.Metrics); ok {
 			v.Set(1, true)
-		} else {
-			c.Metrics.Store("PollCount", utils.NewMetrics("PollCount", 1, true))
 		}
 	} else {
 		c.Metrics.Store("PollCount", utils.NewMetrics("PollCount", 1, true))
@@ -120,8 +118,6 @@ func (c *Collector) GetAllMetrics() map[string]utils.Metrics {
 
 		if ok1 && ok2 {
 			result[k] = v
-		} else {
-			println(ok1, ok2, reflect.TypeOf(key).String(), reflect.TypeOf(value).String())
 		}
 		return true
 	})
@@ -129,20 +125,20 @@ func (c *Collector) GetAllMetrics() map[string]utils.Metrics {
 	return result
 }
 
-// collect runs the given function f periodically at specified intervals.
+// Collect runs the given function f periodically at specified intervals.
 // This is a helper method used by Collect().
-func (c *Collector) collect(interval time.Duration, f func()) {
+func (c *Collector) Collect(ctx context.Context, wg *sync.WaitGroup, interval time.Duration, f func()) {
+	defer wg.Done()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		f()
-		time.Sleep(interval)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			f()
+			time.Sleep(interval)
+		}
 	}
-}
-
-// Collect starts the metric collection loop in a separate goroutine.
-// Calls the provided function f every interval.
-func (c *Collector) Collect(interval time.Duration, f func()) {
-	go c.collect(interval, f)
 }
