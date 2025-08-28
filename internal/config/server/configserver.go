@@ -10,6 +10,7 @@ package server
 import (
 	"encoding/json"
 	"flag"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -44,8 +45,13 @@ var (
 	Key = flag.String("k", "", "key")
 	// Crypto hold a private key
 	CryptoKey  = flag.String("y", "private_key.pem", "crypto key")
+	TrustedSubnet = flag.String("t", "192.168.0.0/16", "trusted subnet")
+	Grpc = flag.Bool("g", false, "gRPC")
+
+
 	ConfigFile = flag.String("c", "", "config file")
 	Loaded     = false
+	TrustedSubnetObj *net.IPNet
 )
 
 // ConfigServer parses command-line flags and environment variables
@@ -59,7 +65,7 @@ var (
 func ConfigServer() error {
 	var CryptoKeyVar string
 	var ConfigFileVar string
-	flag.StringVar(&CryptoKeyVar, "crypto-key", "cert.pem", "crypto key")
+	flag.StringVar(&CryptoKeyVar, "crypto-key", "private_key.pem", "crypto key")
 	flag.StringVar(&ConfigFileVar, "config", "", "config")
 	flag.Parse()
 
@@ -81,6 +87,13 @@ func ConfigServer() error {
 
 	loadFromEnv()
 
+	_, ipNet, err := net.ParseCIDR(*TrustedSubnet)
+
+	if err != nil {
+		return err
+	}
+	TrustedSubnetObj = ipNet
+
 	logger.Log.Info("ConfigServer",
 		zap.String("EndpointServer", *EndpointServer),
 		zap.Int("StoreInterval", *StoreInterval),
@@ -99,7 +112,9 @@ type Config struct {
 	DatabaseDSN   string `json:"database_dsn,omitempty"`
 	CryptoKey     string `json:"crypto_key,omitempty"`
 	StoreInterval string `json:"store_interval,omitempty"`
+	TrustedSubnet   string `json:"trusted_subnet,omitempty"`
 	Restore       bool   `json:"restore,omitempty"`
+
 }
 
 func loadFromEnv() {
@@ -142,11 +157,15 @@ func loadFromEnv() {
 	if found {
 		CryptoKey = &cr
 	}
+	ts, found := os.LookupEnv("TRUSTED_SUBNET")
+	if found {
+		TrustedSubnet = &ts
+	}
 }
 
 func LoadConfigFile() error {
 	cfg := &Config{}
-	a, b, c, d, e, f, ab, bb, cb, db, eb, fb := storeParsed()
+	a, b, c, d, e, f, g, ab, bb, cb, db, eb, fb, gb := storeParsed()
 
 	if *ConfigFile != "" {
 		file, err := os.Open(*ConfigFile)
@@ -174,15 +193,15 @@ func LoadConfigFile() error {
 		*CryptoKey = cfg.CryptoKey
 		Loaded = true
 	}
-	checkLoaded(a, b, c, d, e, f, ab, bb, cb, db, eb, fb)
+	checkLoaded(a, b, c, d, e, f, g, ab, bb, cb, db, eb, fb, gb)
 	return nil
 }
-func storeParsed() (string, int, string, string, string, bool, bool, bool, bool, bool, bool, bool) {
-	var a, c, d, e string
+func storeParsed() (string, int, string, string, string, bool, string, bool, bool, bool, bool, bool, bool, bool) {
+	var a, c, d, e, g string
 	var b int
 	var f bool
 
-	ab, bb, cb, db, eb, fb := false, false, false, false, false, false
+	ab, bb, cb, db, eb, fb, gb := false, false, false, false, false, false, false
 	if *EndpointServer != "localhost:8080" {
 		a = *EndpointServer
 		ab = true
@@ -207,10 +226,15 @@ func storeParsed() (string, int, string, string, string, bool, bool, bool, bool,
 		f = IsDB
 		fb = true
 	}
-	return a, b, c, d, e, f, ab, bb, cb, db, eb, fb
+	if *TrustedSubnet != "" {
+		g = *TrustedSubnet
+		gb = true
+	} 
+
+	return a, b, c, d, e, f, g, ab, bb, cb, db, eb, fb, gb
 }
 
-func checkLoaded(a string, b int, c, d, e string, f, ab, bb, cb, db, eb, fb bool) {
+func checkLoaded(a string, b int, c, d, e string, f bool, g string, ab, bb, cb, db, eb, fb, gb bool) {
 	if Loaded {
 		if ab {
 			*EndpointServer = a
@@ -229,6 +253,9 @@ func checkLoaded(a string, b int, c, d, e string, f, ab, bb, cb, db, eb, fb bool
 		}
 		if fb {
 			IsDB = f
+		}
+		if gb {
+			*TrustedSubnet = g
 		}
 	}
 }

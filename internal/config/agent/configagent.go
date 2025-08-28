@@ -34,6 +34,8 @@ var (
 	// Can be set via flag "-l" or env var "RATE_LIMIT".
 	RateLimit = flag.Int("l", 1, "rate limit")
 
+	Grpc = flag.Bool("g", false, "gRPC")
+
 	Loaded = false
 )
 

@@ -30,6 +30,7 @@ import (
 // - Metric update and value retrieval endpoints
 // - Pprof profiling routes
 func Route(r *gin.Engine, st storage.Storage, pool *pgxpool.Pool, privateKey *rsa.PrivateKey) {
+	r.Use(middlewares.SubnetCheck())
 	r.Use(middlewares.Crypto(privateKey))
 	r.Use(middlewares.Gzip())
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
