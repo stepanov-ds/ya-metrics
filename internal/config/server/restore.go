@@ -48,7 +48,7 @@ func storeInFile(s *storage.MemStorage) {
 	if err != nil {
 		logger.Log.Error("storeInFile", zap.String("error while marshal metrics", err.Error()))
 	}
-	err = os.WriteFile(*FileStorePath, jsonData, os.FileMode(os.O_RDWR)|os.FileMode(os.O_CREATE)|os.FileMode(os.O_TRUNC))
+	err = os.WriteFile(*FileStorePath, jsonData, 0644)
 	if err != nil {
 		logger.Log.Error("storeInFile", zap.String("error while writing file", err.Error()))
 	}

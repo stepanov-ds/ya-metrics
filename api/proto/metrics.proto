@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "grpc/grpc_generated";
+
+message Header {
+  map<string, string> values = 1;
+}
+
+message HTTPRequestPayload {
+  string method = 1; 
+  string path = 2; 
+  Header headers = 3;
+  bytes body = 4;
+}
+
+message HTTPResponsePayload {
+  int32 status_code = 1;
+  Header headers = 2;
+  bytes body = 3;
+}
+
+service MetricsTunnel {
+  rpc HandleHTTPRequest(HTTPRequestPayload) returns (HTTPResponsePayload);
+}
